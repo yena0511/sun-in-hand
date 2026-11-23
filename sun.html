@@ -1,0 +1,2646 @@
+<!doctype html>
+<!-- 올라퍼 엘리아슨의 《The Weather Project》를 재해석한 웹 작품 -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>손 안의 태양</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<style>
+/* 기본 스타일과 무대 */
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+:root{
+  --ink:#130500;        /* hall darkness */
+  --wall:#2e0f02;
+  --amber:#ff9d2e;      /* sodium lamp */
+  --glow:#ffe9a8;       /* sun core */
+  --text:#f8e2c2;
+  --muted:#c4906a;
+  --line:#58240a;
+  --font-display:"Gowun Batang", "Nanum Myeongjo", Georgia, serif;
+  --font-body:"IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  color-scheme:dark;
+}
+html,body{background:var(--ink);color:var(--text)}
+body{margin:0;font-family:var(--font-body);font-size:15px;line-height:1.6;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-block:20px 48px}
+.wrap{max-width:1080px;margin:0 auto;display:grid;gap:18px}
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 20px}
+h1{font-family:var(--font-display);font-weight:700;font-size:clamp(28px,5vw,44px);line-height:1.15;margin:0;color:var(--glow);text-wrap:balance}
+.credit{color:var(--muted);font-size:13px;letter-spacing:.02em}
+.stage{display:grid;gap:6px}
+.panel{position:relative;border:1px solid var(--line);background:#000}
+.panel canvas{display:block;width:100%;touch-action:none;cursor:crosshair}
+.tag{position:absolute;left:10px;top:8px;font-size:11px;letter-spacing:.12em;color:var(--text);background:rgba(15,10,2,.6);padding:1px 6px;border-radius:3px;pointer-events:none}
+.tag.r{left:auto;right:10px}
+.controls{display:flex;flex-wrap:wrap;gap:8px}
+button{-webkit-touch-callout:none;font:inherit;font-size:14px;font-weight:500;color:var(--ink);background:var(--amber);border:0;border-radius:999px;padding:10px 18px;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+button.ghost{background:transparent;color:var(--text);border:1px solid var(--muted)}
+button[aria-pressed="true"]{background:var(--glow);box-shadow:0 0 0 3px rgba(242,182,50,.35)}
+button.ghost[aria-pressed="true"]{color:var(--ink)}
+button:disabled{opacity:.45;cursor:default}
+button:focus-visible{outline:2px solid var(--glow);outline-offset:3px}
+.status{font-size:14px;color:var(--text);font-variant-numeric:tabular-nums;min-height:1.6em}
+.status b{color:var(--glow);font-weight:600}
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px;padding-top:4px}
+.notes > div{min-width:0}
+.notes h2{font-family:var(--font-display);font-size:19px;margin:0 0 8px;color:var(--glow)}
+.notes p,.notes li{color:var(--muted);font-size:14px;margin:0}
+.notes ul{margin:0;padding-left:18px;display:grid;gap:6px}
+.notes li strong{color:var(--text);font-weight:600}
+kbd{font-family:var(--font-body);font-size:12px;border:1px solid var(--muted);border-radius:4px;padding:0 5px;color:var(--text)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.sensory-status{font-size:13px;color:var(--muted);min-height:1.6em}
+@media (prefers-reduced-motion: reduce){ button{transition:none} }
+/* 감상 도구 */
+.top-actions{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font-size:13px;padding:7px 14px;background:transparent;color:var(--text);border:1px solid var(--muted)}
+body:not([data-mode="visual"]) #modeBtn{background:var(--amber);color:var(--ink);border-color:var(--amber)}
+.tag.hint{opacity:.8}
+.dock{display:grid;gap:10px}
+.controls button{flex:1 1 auto}
+.statusbar{border:1px solid var(--line);border-radius:10px;padding:8px 12px;display:grid;gap:4px;background:rgba(242,182,50,.04)}
+.statusbar .status{min-height:1.5em}
+.guide{font-size:15px;color:var(--text);margin:0;min-height:1.6em;max-height:7.4em;overflow:auto;position:relative;line-height:1.6}
+.guide .sent.now{background:rgba(242,182,50,.28);color:var(--glow);border-radius:4px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.voicebar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.voicebar button{font-size:13px;padding:6px 12px}
+/* 누운 모양 */
+.posebar{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.posebar .pose-title{font-size:13px;color:var(--muted);margin-right:4px;display:inline-flex;gap:6px;align-items:center}
+.posebar button{font-size:13px;padding:7px 13px}
+/* 단계별 감상 */
+.stages{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.stage-btn{display:flex;align-items:center;gap:12px;text-align:left;background:transparent;color:var(--text);border:1px solid var(--muted);border-radius:12px;padding:10px 14px;font-size:16px;font-weight:600}
+.stage-btn .num{flex:0 0 34px;height:34px;border-radius:50%;border:2px solid var(--amber);color:var(--amber);display:grid;place-items:center;font-weight:700}
+.stage-btn small{display:block;font-size:12.5px;color:var(--muted);font-weight:400}
+.stage-btn[aria-pressed="true"],.stage-btn[aria-expanded="true"]{background:var(--amber);color:var(--ink);border-color:var(--amber)}
+.stage-btn[aria-pressed="true"] .num,.stage-btn[aria-expanded="true"] .num{border-color:var(--ink);color:var(--ink)}
+.stage-btn[aria-pressed="true"] small,.stage-btn[aria-expanded="true"] small{color:var(--ink)}
+.substage{border-left:3px solid var(--amber);padding:4px 0 4px 12px;display:grid;gap:8px}
+body[data-exploring="1"] #hall{cursor:help}
+/* 글자 크기 · 고대비 */
+body.fs-1 .wrap > :not(.stage), body.fs-1 dialog{zoom:1.15}
+body.fs-2 .wrap > :not(.stage), body.fs-2 dialog{zoom:1.3}
+body.hc{--ink:#000;--wall:#000;--text:#fff;--muted:#fff;--line:#fff;--amber:#ffd400;--glow:#ffe94d}
+body.hc .sheet, body.hc .statusbar, body.hc dialog.mode{background:#000}
+body.hc button.ghost, body.hc .chip, body.hc .tabchip, body.hc .stage-btn{border-width:2px}
+body.hc .guide .sent.now{background:#ffd400;color:#000}
+.guide b{color:var(--text);font-weight:600}
+.menu{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:10px}
+.tabchip{background:transparent;color:var(--muted);border:1px solid var(--line);font-size:14px;padding:8px 16px}
+.tabchip::after{content:" ▾";font-size:11px}
+.tabchip[aria-expanded="true"]{background:var(--amber);color:var(--ink);border-color:var(--amber)}
+.tabchip[aria-expanded="true"]::after{content:" ▴"}
+.sheet{border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:grid;gap:12px;margin-top:-8px;background:rgba(66,20,3,.35)}
+.sheet .lead{margin:0;font-size:13px;color:var(--muted)}
+.tools{display:flex;flex-wrap:wrap;gap:8px}
+.tools button,.feature-list button{font-size:13px;padding:8px 14px}
+button.small{font-size:12px;padding:6px 12px}
+button[data-key]::after{content:attr(data-key);content:attr(data-key) / "";font-size:10px;font-weight:600;margin-left:8px;padding:1px 5px;border:1px solid currentColor;border-radius:4px;opacity:.55;vertical-align:1px}
+@media (pointer: coarse){ button[data-key]::after{display:none} }
+.sheet details{font-size:13px;color:var(--muted)}
+.sheet details summary{cursor:pointer;color:var(--text)}
+.sheet details p{margin:8px 0 0}
+.feature-list{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.feature-list li{display:grid;grid-template-columns:minmax(170px,auto) 1fr;gap:4px 14px;align-items:center;padding-bottom:10px;border-bottom:1px dashed var(--line)}
+.feature-list li:last-child{border-bottom:0;padding-bottom:0}
+.feature-list li > span{font-size:12.5px;color:var(--muted);line-height:1.6}
+.feature-list li > button.small{grid-column:2;justify-self:start}
+@media (max-width:620px){ .feature-list li{grid-template-columns:1fr} .feature-list li > button.small{grid-column:1} }
+.settings{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;font-size:13px}
+.settings .group{border:1px solid var(--line);border-radius:10px;padding:8px 12px 12px;margin:0;display:grid;gap:10px}
+.settings .group-col{display:grid;gap:14px}
+.settings legend{padding:0 4px;color:var(--glow);font-weight:600}
+.settings label{display:grid;gap:3px;color:var(--text)}
+.settings input[type=range]{width:100%;accent-color:var(--amber)}
+.settings .radios label,.settings label.check{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}
+.settings small{color:var(--muted);font-size:12px}
+.settings .note,.notes .note{font-size:12px;color:var(--muted);margin:0}
+.notes .note{margin-top:10px}
+.settings input:focus-visible{outline:2px solid var(--glow);outline-offset:2px}
+.kbdhint{font-size:10px;border:1px solid var(--muted);border-radius:4px;padding:0 4px;color:var(--muted);font-weight:500}
+.steps{margin:0;padding-left:20px;display:grid;gap:6px}
+.steps li{color:var(--muted);font-size:14px}
+.steps li strong{color:var(--text)}
+dialog.keys{max-width:760px}
+.keygrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px 20px}
+.keygrid h3{font-size:14px;color:var(--glow);margin:0 0 6px}
+.keygrid dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:13px}
+.keygrid dt{white-space:nowrap}
+.keygrid dd{margin:0;color:var(--muted)}
+/* 비시각 모드: 접힌 메뉴 대신 제목이 붙은 펼친 목록 + 걷기 버튼 */
+.skip{position:absolute;left:12px;top:-60px;z-index:10;background:var(--glow);color:var(--ink);padding:8px 14px;border-radius:8px;font-weight:600;text-decoration:none}
+.skip:focus{top:10px}
+.sheet-title{font-family:var(--font-display);font-size:18px;color:var(--glow);margin:0}
+body[data-mode="visual"] .sheet-title{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+body:not([data-mode="visual"]) .sheet{margin-top:0}
+.dpad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-areas:". up ." "left down right";gap:8px;max-width:520px}
+.dpad button{font-size:15px;padding:14px 8px;border-radius:14px;white-space:nowrap}
+.dpad .up{grid-area:up}.dpad .left{grid-area:left}.dpad .down{grid-area:down}.dpad .right{grid-area:right}
+.dpad-title{font-size:14px;color:var(--text);margin:0;font-weight:600}
+/* 접근성: 모드 선택 대화상자, 비시각 감상 도구, 포커스 표시 */
+.panel canvas:focus-visible{outline:3px solid var(--glow);outline-offset:-3px}
+dialog.mode{max-width:560px;width:calc(100% - 32px);background:#1e0802;color:var(--text);border:1px solid var(--amber);border-radius:14px;padding:26px 24px}
+dialog.mode::backdrop{background:rgba(5,3,0,.82)}
+dialog.mode h2{font-family:var(--font-display);color:var(--glow);font-size:24px;margin:0 0 10px}
+dialog.mode p{margin:0 0 12px;color:var(--muted);font-size:14px}
+dialog.mode .choices{display:grid;gap:10px;margin-top:16px}
+dialog.mode .choices button{text-align:left;padding:14px 18px;border-radius:12px;font-size:16px}
+dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:.85;margin-top:2px}
+#modeDialog{max-height:calc(100% - 32px);overflow:auto}
+#modeTitle:focus{outline:none}
+#modeDialog .mode-intro{color:var(--text);font-size:15px;word-break:keep-all;overflow-wrap:anywhere}
+#modeDialog h3{color:var(--glow);font-size:14px;margin:18px 0 8px}
+#modeDialog .choices{margin-top:0}
+#modeDialog .mode-option{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+#modeDialog .mode-option button{width:100%;border-radius:0}
+#modeDialog .mode-option p{margin:0;padding:10px 14px;color:var(--text);font-size:13px;line-height:1.7}
+#modeDialog .mode-hint{font-size:12px;margin:12px 0 0}
+@media (max-width:480px){#modeDialog{padding:18px 16px}#modeDialog .choices button{padding:11px 14px}}
+
+</style>
+</head>
+<body data-mode="visual">
+
+<dialog class="mode" id="modeDialog" aria-labelledby="modeTitle" aria-describedby="modeAccess">
+  <h2 id="modeTitle" tabindex="-1" autofocus>손 안의 태양</h2>
+  <p class="mode-intro" id="modeAccess">감상 방식을 선택하는 첫 화면입니다. ‘시작 안내 듣기’로 작품과 조작법을 들을 수 있습니다. 키보드에서는 Tab 키로 버튼을 찾고 Enter 키로 선택하세요. 화면 읽기 프로그램을 사용 중이면 ‘화면 읽기 사용’을 선택하세요.</p>
+  <div class="tools" role="group" aria-label="첫 화면 음성 안내">
+    <button id="welcomeSpeak" type="button" aria-keyshortcuts="H">시작 안내 듣기</button>
+    <button id="welcomeStop" class="ghost" type="button" aria-keyshortcuts="Escape" disabled>안내 음성 끄기</button>
+  </div>
+  <p class="mode-hint" id="welcomeStatus" role="status" aria-live="polite">시작 안내는 버튼을 눌러 재생합니다. 안내 도중에도 감상 방식을 선택할 수 있습니다.</p>
+  <p class="mode-intro" id="modeDesc">올라퍼 엘리아슨의 설치 작품 《The Weather Project》를 웹에서 재해석했습니다. 가상의 터빈 홀 끝에는 태양이 떠 있고, 천장 거울에는 바닥과 관람객이 비칩니다.</p>
+  <p class="mode-intro" id="modeActions">태양을 향해 걸어 보세요. 소리를 켜면 가까이 갈수록 음이 높아집니다. ‘숨 불어넣기’로 안개를 만들고, 바닥에 누워 거울을 올려다볼 수도 있어요. 다른 관람객과 함께 누운 몸으로 거울 속 글자를 완성해 보세요.</p>
+  <h3 id="modeChoiceTitle">감상 방식</h3>
+  <p class="mode-intro">세 방식 모두 같은 작품을 감상합니다. 화면을 보며 움직일지, 어떤 목소리로 안내받을지에 따라 골라 주세요.</p>
+  <div class="choices" role="group" aria-labelledby="modeChoiceTitle">
+    <div class="mode-option">
+      <button id="modeVisual" type="button" aria-keyshortcuts="1" aria-describedby="modeVisualDesc">1. 화면 보며 감상<small>화면을 보면서 직접 둘러보고 싶을 때</small></button>
+      <p id="modeVisualDesc">태양·안개·거울을 화면으로 보며 감상합니다. 홀 바닥을 누르면 그 자리로 바로 걷고, 방향키로도 움직일 수 있어요. 소리를 켜거나 원하는 설명을 눌러 들을 수도 있습니다.</p>
+    </div>
+    <div class="mode-option">
+      <button id="modeNonvisual" type="button" aria-keyshortcuts="2" aria-describedby="modeNonvisualDesc">2. 음성 안내로 감상<small>작품의 목소리로 공간과 변화를 안내받고 싶을 때</small></button>
+      <p id="modeNonvisualDesc">화면을 계속 보지 않아도 태양까지의 거리와 내 조작에 따른 변화를 알 수 있도록 작품이 음성과 효과음으로 안내합니다. 화면이나 지점 버튼으로 위치를 먼저 확인한 뒤 ‘이곳으로 이동’을 눌러 걸어요. 방향키나 걷기 버튼으로도 이동할 수 있고, 별도의 화면 읽기 프로그램은 필요하지 않습니다.</p>
+    </div>
+    <div class="mode-option">
+      <button id="modeReader" type="button" aria-keyshortcuts="3" aria-describedby="modeReaderDesc">3. 화면 읽기 사용<small>평소 쓰는 화면 읽기 프로그램으로 조작하고 싶을 때</small></button>
+      <p id="modeReaderDesc">화면 읽기 프로그램은 버튼 이름과 글을 소리로 읽어, 화면을 보지 않고 조작하도록 돕습니다. VoiceOver·TalkBack·NVDA를 기기에서 먼저 켠 뒤 이 방식을 선택하세요. 사용 중인 프로그램으로 버튼을 찾아 실행하고 작품 안내를 듣습니다. 두 목소리가 겹치지 않도록 작품의 내장 음성은 꺼집니다. 이 버튼이 화면 읽기 프로그램 자체를 켜 주지는 않습니다.</p>
+    </div>
+  </div>
+  <p class="mode-hint">이 창에서는 숫자 <kbd>1</kbd>·<kbd>2</kbd>·<kbd>3</kbd>으로 감상 방식을 선택하고, <kbd>H</kbd>로 시작 안내를 들을 수 있어요. 음성이 나오는 동안 <kbd>Esc</kbd>를 누르면 음성만 멈춥니다. 감상을 시작한 뒤에도 ‘처음 화면’에서 방식을 바꿀 수 있어요.</p>
+</dialog>
+
+<a class="skip" href="#walkTitle" id="skipLink">걷기 버튼과 감상 도구로 건너뛰기</a>
+
+<div class="sr" id="a11yLive" aria-live="polite" aria-atomic="true"></div>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>손 안의 태양</h1>
+      <div class="credit">올라퍼 엘리아슨의 《The Weather Project》(2003, 테이트 모던)를 재해석한 웹 작품</div>
+    </div>
+    <div class="top-actions">
+      <button id="modeBtn" class="chip" type="button" aria-keyshortcuts="M" data-key="M">감상 모드 · 일반</button>
+      <button id="startBtn" class="chip" type="button" aria-haspopup="dialog">처음 화면</button>
+      <button id="keysBtn" class="chip" type="button" aria-keyshortcuts="?" aria-haspopup="dialog" data-key="?">단축키</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div class="panel" id="mirrorPanel">
+      <canvas id="mirror" role="img" aria-label="천장 거울. 위에서 내려다본 홀 바닥과, 관람객이 비칩니다. ‘관객의 상호작용’을 열면 누운 관람객들이 몸으로 만든 ‘태양’ 글자도 비칩니다. 누르거나 끌면 그 자리로 걸어갑니다. 거울 뒤 구조는 ‘작품 이해’의 거울 뒤 구조 보기 버튼이나 T 키로도 볼 수 있습니다."></canvas>
+      <span class="tag">천장 거울 · 길게 누르면 뒤편</span><span class="tag r">태양 쪽 →</span>
+    </div>
+    <div class="panel" id="hallPanel">
+      <canvas id="hall" tabindex="0" role="application" aria-roledescription="탐색 공간" aria-label="터빈 홀 탐색 공간. 방향키로 걷고, 스페이스를 누르고 있으면 숨을 붑니다. H 키로 조작법, S 키로 지금 상태를 듣습니다."></canvas>
+      <span class="tag">터빈 홀</span><span class="tag r hint">바닥을 누르거나 방향키로 걷기</span>
+    </div>
+  </div>
+
+  <div class="dock">
+
+    <section id="dpadWrap" aria-labelledby="walkTitle" hidden>
+      <h2 class="dpad-title" id="walkTitle" tabindex="-1">걷기 · 한 번 누를 때마다 한 걸음(약 9m)</h2>
+      <div class="dpad" role="group" aria-labelledby="walkTitle">
+        <button class="up" id="stepUp" type="button" aria-keyshortcuts="ArrowUp" aria-label="태양 쪽으로 한 걸음">↑ 태양 쪽</button>
+        <button class="left ghost" id="stepLeft" type="button" aria-keyshortcuts="ArrowLeft" aria-label="왼쪽 벽 쪽으로 한 걸음">← 왼쪽</button>
+        <button class="down ghost" id="stepDown" type="button" aria-keyshortcuts="ArrowDown" aria-label="입구 쪽으로 한 걸음">↓ 입구 쪽</button>
+        <button class="right ghost" id="stepRight" type="button" aria-keyshortcuts="ArrowRight" aria-label="오른쪽 벽 쪽으로 한 걸음">→ 오른쪽</button>
+      </div>
+    </section>
+    <div class="controls" role="group" aria-label="핵심 조작">
+      <button id="breath" aria-describedby="breathHint" aria-keyshortcuts="Space B" data-key="Space">숨 불어넣기 (꾹 누르기)</button>
+      <button id="lie" class="ghost" aria-pressed="false" aria-keyshortcuts="L" data-key="L">바닥에 눕기</button>
+      <button id="sound" class="ghost" aria-pressed="false">소리로 감상하기</button>
+      <button id="speak" class="ghost" aria-keyshortcuts="S W" data-key="S">지금 상태 듣기</button>
+    </div>
+    <div class="posebar" id="poseBar" role="group" aria-labelledby="poseTitle" aria-describedby="poseHint">
+      <span class="pose-title" id="poseTitle">누운 모양 <span class="kbdhint" aria-hidden="true">A</span></span>
+      <button class="ghost" type="button" data-pose="I" aria-pressed="false">ㅣ 일자</button>
+      <button class="ghost" type="button" data-pose="T" aria-pressed="false">T 팔 벌리기</button>
+      <button class="ghost" type="button" data-pose="Y" aria-pressed="false">Y 만세</button>
+      <button class="ghost" type="button" data-pose="X" aria-pressed="false">X 큰 대(大)자</button>
+      <button class="ghost" type="button" data-pose="C" aria-pressed="false">C 웅크리기</button>
+      <button id="rotateBtn" class="ghost" type="button" aria-keyshortcuts="D" data-key="D">↻ 몸 돌리기</button>
+    </div>
+    <span id="poseHint" class="sr">모양을 고르면 그 모양으로 바닥에 눕습니다. 누운 채로 다른 모양을 고르면 바로 바뀝니다. A 키로 다음 모양, D 키로 몸을 45도씩 돌립니다.</span>
+    <span id="breathHint" class="sr">누르고 있는 동안 홀에 안개가 짙어집니다. 스크린리더로 한 번 누르거나 B 키를 누르면 약 3초 동안 숨을 붑니다.</span>
+    <div class="statusbar">
+      <div class="status" id="status"><b id="statusDistance"></b><span id="statusDetails"></span></div>
+      <p class="guide" id="guideText"><b>최근 안내</b> · 아직 안내가 없습니다.</p>
+      <div class="voicebar" role="group" aria-label="음성 조절">
+        <button id="pauseBtn" class="ghost" type="button" aria-label="음성 일시정지">⏸ 일시정지</button>
+        <button id="repeatBtn" class="ghost" type="button" aria-keyshortcuts="R" aria-label="마지막 안내 다시 듣기">↺ 다시 듣기</button>
+        <button id="rateBtn" class="ghost" type="button" aria-keyshortcuts="+ -" aria-label="말 빠르기 바꾸기, 지금 보통보다 조금 빠르게">빠르기 · 조금 빠르게</button>
+        <button id="stopVoiceBtn" class="ghost" type="button" aria-keyshortcuts="Escape" aria-label="음성 멈추기">■ 멈추기</button>
+      </div>
+    </div>
+  </div>
+
+  <nav class="menu" aria-label="더 많은 기능">
+    <button class="tabchip" type="button" id="tabGuide" aria-expanded="false" aria-controls="pGuide">감상 단계</button>
+    <button class="tabchip" type="button" id="tabLearn" aria-expanded="false" aria-controls="pLearn">작품 이해</button>
+    <button class="tabchip" type="button" id="tabMove" aria-expanded="false" aria-controls="pMove">이동</button>
+    <button class="tabchip" type="button" id="tabSense" aria-expanded="false" aria-controls="pSense">감각 확장</button>
+    <button class="tabchip" type="button" id="tabSet" aria-expanded="false" aria-controls="pSet">설정</button>
+  </nav>
+
+  <section class="sheet" id="pGuide" aria-labelledby="hGuide" hidden>
+    <h2 class="sheet-title" id="hGuide">감상 단계</h2>
+    <p class="lead">전체 해설로 공간을 살펴보고, 관심 있는 대상을 골라 듣거나 손끝으로 찾아보세요.</p>
+    <div class="tools" role="group" aria-label="순서대로 감상">
+      <button id="tourStart" type="button">처음부터 안내받기</button>
+      <button id="tourPause" class="ghost" type="button" hidden>잠시 멈추기</button>
+      <button id="tourNext" class="ghost" type="button" hidden>다음으로</button>
+      <button id="tourStop" class="ghost" type="button" hidden>안내 감상 끝내기</button>
+    </div>
+    <p class="lead" id="tourStatus" role="status" aria-live="polite">소개를 듣고 태양과 거울을 둘러본 뒤 직접 탐색합니다. 화면 읽기 사용 시 ‘다음으로’를 눌러 진행하세요.</p>
+    <div class="stages">
+      <button id="introBtn" class="stage-btn" type="button" aria-keyshortcuts="1 I"><span class="num" aria-hidden="true">1</span><span>전체<small>공간과 작품을 한 번에</small></span></button>
+      <button id="focusBtn" class="stage-btn" type="button" aria-keyshortcuts="2" aria-expanded="false" aria-controls="focusList"><span class="num" aria-hidden="true">2</span><span>초점<small>태양·거울·안개·관람객·홀 하나씩</small></span></button>
+      <button id="exploreModeBtn" class="stage-btn" type="button" aria-keyshortcuts="3" aria-pressed="false" aria-controls="explorePanel"><span class="num" aria-hidden="true">3</span><span>손끝 탐색<small>소리로 홀 곳곳 찾기</small></span></button>
+      <button id="interactBtn" class="stage-btn" type="button" aria-keyshortcuts="4" aria-expanded="false" aria-controls="interactPanel"><span class="num" aria-hidden="true">4</span><span>관객의 상호작용<small>누운 몸으로 태양 글자 완성</small></span></button>
+      <button id="helpBtn" class="stage-btn" type="button" aria-keyshortcuts="H"><span class="num" aria-hidden="true">?</span><span>조작법 듣기<small>단추와 키 찾는 법</small></span></button>
+    </div>
+    <div id="focusList" class="substage" role="group" aria-label="2 초점: 하나씩 듣기" hidden>
+      <div class="tools">
+        <button id="focusSun" class="ghost" type="button">태양</button>
+        <button id="focusMirror" class="ghost" type="button" aria-keyshortcuts="V">천장 거울</button>
+        <button id="focusFog" class="ghost" type="button">안개</button>
+        <button id="focusPeople" class="ghost" type="button" aria-keyshortcuts="N">관람객</button>
+        <button id="focusHall" class="ghost" type="button">홀 공간</button>
+      </div>
+    </div>
+    <div id="explorePanel" class="substage" role="group" aria-labelledby="exploreLead" hidden>
+      <p class="lead" id="exploreLead">위쪽 ‘터빈 홀’ 화면을 손가락이나 마우스로 훑어 보세요. 위로 갈수록 소리가 높아지고, 좌우로 움직이면 소리의 방향도 달라집니다. 탐색 지점에 가까워지면 소리나 진동이 잦아지고, 닿으면 그곳의 설명을 들을 수 있습니다. 손을 떼면 고른 위치가 유지됩니다. ‘이곳으로 이동’을 누르면 그때 걷기 시작합니다. 아래 지점 버튼이나 마침표 키로도 위치를 고를 수 있습니다.</p>
+      <p class="lead" id="previewStatus" role="status" aria-live="off">이동할 위치를 먼저 소리로 확인하세요.</p>
+      <div class="tools"><button id="previewMove" type="button" disabled aria-describedby="previewStatus">이곳으로 이동</button></div>
+      <div class="tools" id="spotBtns"></div>
+      <div class="tools"><button id="nextSpotBtn" class="ghost" type="button" aria-keyshortcuts=".">다음 지점 ▶</button></div>
+    </div>
+    <div id="interactPanel" class="substage" role="group" aria-labelledby="interactLead" hidden>
+      <p class="lead" id="interactLead">이 단계를 여는 동안에만 관람객들이 모여 눕습니다. 2003년 관람객들은 처음 만난 사람들과 바닥에 함께 누워 몸으로 글자를 만들고 천장 거울로 읽었습니다. 지금 홀 한가운데에서는 관람객 열세 명이 누워 거울 속에 ‘태양’을 쓰고 있는데, 받침 ㅇ의 오른쪽 반쪽(거울 속 붉은 점선)이 비어 있습니다.</p>
+      <ol class="steps">
+        <li><strong>빈 자리로 가기</strong> · 거울의 붉은 점선을 누르거나 ‘빈 자리로 걸어가기’(<kbd>O</kbd>)</li>
+        <li><strong>C자로 웅크려 눕기</strong> · 누운 모양에서 ‘C 웅크리기’(<kbd>A</kbd>로 바꾸기)</li>
+        <li><strong>몸 돌리기</strong> · 둥근 등이 태양 쪽(거울의 오른쪽)을 향하도록 ‘몸 돌리기’(<kbd>D</kbd>)</li>
+      </ol>
+      <p class="lead" id="interactStatus" role="status" aria-live="off">빈 자리를 찾아보세요.</p>
+      <div class="tools">
+        <button id="letterListen" class="ghost" type="button">거울 속 글자 듣기</button>
+        <button id="slotGoBtn" class="ghost" type="button" aria-keyshortcuts="O" data-key="O">빈 자리로 걸어가기</button>
+        <button id="slotCheckBtn" class="ghost" type="button">맞게 누웠는지 확인</button>
+      </div>
+    </div>
+    <details>
+      <summary>작품 소개와 조작법을 글로 읽기</summary>
+      <p id="introText"></p>
+      <p id="keyHelpText"></p>
+    </details>
+  </section>
+
+  <section class="sheet" id="pLearn" aria-labelledby="hLearn" hidden>
+    <h2 class="sheet-title" id="hLearn">작품 이해</h2>
+    <p class="lead">태양·거울·안개가 어떻게 만들어졌는지 알아보고, 숨겨진 구조를 찾아봅니다.</p>
+    <div class="tools">
+      <button id="mirrorBtn" class="ghost" type="button" aria-keyshortcuts="V" data-key="V">천장 거울의 원리</button>
+      <button id="meaningBtn" class="ghost" type="button" aria-keyshortcuts="K" data-key="K">태양·안개 소리의 의미</button>
+      <button id="trussBtn" class="ghost" type="button" aria-pressed="false" aria-keyshortcuts="T" data-key="T">거울 뒤 구조 보기</button>
+      <button id="exploreBtn" class="ghost" type="button" aria-keyshortcuts="E" data-key="E">거울 뒤 구조 탐색 (4부분)</button>
+      <button id="journeyBtn" class="ghost" type="button" aria-keyshortcuts="P" data-key="P">감상 기록 0/5</button>
+    </div>
+  </section>
+
+  <section class="sheet" id="pMove" aria-labelledby="hMove" hidden>
+    <h2 class="sheet-title" id="hMove">이동</h2>
+    <p class="lead">원하는 곳으로 바로 가거나, 멈추거나, 방금 한 이동·눕기를 되돌립니다.</p>
+    <div class="tools">
+      <button id="sunBtn" class="ghost" type="button" aria-keyshortcuts="G" data-key="G">태양 아래로 걸어가기</button>
+      <button id="homeBtn" class="ghost" type="button" aria-keyshortcuts="Home 0" data-key="0">시작 위치로</button>
+      <button id="haltBtn" class="ghost" type="button" aria-keyshortcuts="X" data-key="X">이동 멈추기</button>
+      <button id="undoBtn" class="ghost" type="button" aria-keyshortcuts="U Backspace" data-key="U">되돌리기</button>
+    </div>
+  </section>
+
+  <section class="sheet" id="pSense" aria-labelledby="hSense" hidden>
+    <h2 class="sheet-title" id="hSense">감각 확장</h2>
+    <p class="lead">울림, 바람, 관람객과 이어지는 빛을 원하는 대로 켜고 끌 수 있습니다.</p>
+    <ul class="feature-list" role="list">
+      <li><button id="senseToggle" class="ghost" aria-pressed="false">감각의 울림 · 꺼짐</button>
+        <span>태양까지의 거리를 한 번, 두 번, 세 번의 울림으로 느껴 보세요. 진동을 쓸 수 없으면 같은 리듬의 소리가 납니다.</span>
+        <button id="sensePreview" class="ghost small" type="button">지금 리듬 느껴보기</button></li>
+      <li><button id="windToggle" class="ghost" aria-pressed="false">보이지 않는 바람 · 꺼짐</button>
+        <span>공기가 왼쪽에서 오른쪽으로 흐릅니다. 걷거나 숨을 불어넣으면 바람 소리와 흐름선이 강해집니다.</span></li>
+      <li><button id="togetherToggle" class="ghost" aria-pressed="false">함께 만드는 빛 · 꺼짐</button>
+        <span>다른 관람객과 가까워지면 거울 속에서 빛으로 연결되고 태양의 후광이 넓어집니다. 연결음과 안내로 주변 관람객의 수와 방향을 알 수 있습니다.</span>
+        <button id="nearbyBtn" class="ghost small" type="button" aria-keyshortcuts="N" data-key="N">주변 관람객 듣기</button></li>
+    </ul>
+    <div id="sensoryStatus" class="sensory-status" role="status" aria-live="off">감각 기능이 모두 꺼져 있습니다.</div>
+  </section>
+
+  <section class="sheet" id="pSet" aria-labelledby="hSet" hidden>
+    <h2 class="sheet-title" id="hSet">설정</h2>
+    <div class="settings">
+      <fieldset class="group">
+        <legend>소리 크기</legend>
+        <label>배경음 (태양 소리·바람) <input id="volBg" type="range" min="0" max="100" step="5" value="70" aria-valuetext="70퍼센트"></label>
+        <label>효과음 (걸음·벽·연결음) <input id="volFx" type="range" min="0" max="100" step="5" value="80" aria-valuetext="80퍼센트"></label>
+        <label>음성 안내 <input id="volVoice" type="range" min="0" max="100" step="5" value="100" aria-valuetext="100퍼센트"></label>
+        <label>음성 속도 <input id="rateVoice" type="range" min="0.7" max="1.6" step="0.1" value="1.1" aria-valuetext="보통보다 조금 빠르게"></label>
+      </fieldset>
+      <fieldset class="group radios">
+        <legend>보기</legend>
+        <label><input type="radio" name="fontSize" value="0" checked> 글자 보통</label>
+        <label><input type="radio" name="fontSize" value="1"> 글자 크게</label>
+        <label><input type="radio" name="fontSize" value="2"> 글자 아주 크게</label>
+        <label class="check"><input id="hcChk" type="checkbox"> 고대비 <small>검정 바탕 · 흰 글씨 · 노랑 강조</small></label>
+      </fieldset>
+      <div class="group-col">
+        <fieldset class="group radios">
+          <legend>자동 안내 <span class="kbdhint" aria-hidden="true">F</span></legend>
+          <label><input type="radio" name="verbosity" value="off"> 끄기 <small>내 조작에 대한 대답만</small></label>
+          <label><input type="radio" name="verbosity" value="major"> 주요 이벤트만 <small>도착·벽·구역·연결</small></label>
+          <label><input type="radio" name="verbosity" value="detail" checked> 상세 <small>걸음마다 위치까지</small></label>
+        </fieldset>
+        <fieldset class="group">
+          <legend>소리와 음성</legend>
+          <div class="tools">
+            <button id="muteBtn" class="ghost" type="button" aria-pressed="false" aria-keyshortcuts="Q" data-key="Q">전체 음소거</button>
+            <button id="ttsBtn" class="ghost" type="button" aria-pressed="true">내장 음성 켜짐</button>
+          </div>
+          <label class="check"><input id="stereoChk" type="checkbox" checked> 좌우(스테레오) 소리 사용 <small>끄면 방향을 말로만 안내</small></label>
+          <p class="note">화면 읽기 모드에서는 내장 음성이 꺼집니다. 일반 모드로 돌아오면 이전의 내장 음성 설정을 다시 사용합니다.</p>
+          <button id="deviceBtn" class="ghost small" type="button" aria-keyshortcuts="C" data-key="C">이 기기에서 되는 기능 확인</button>
+        </fieldset>
+      </div>
+    </div>
+  </section>
+
+  <section class="notes">
+    <div>
+      <h2>처음이라면</h2>
+      <ol class="steps">
+        <li><strong>걸어 보세요.</strong> 홀 바닥을 누르거나 방향키 <kbd>↑</kbd>로 태양 쪽으로 다가갑니다. 끌면서 걸으면 빛 자국이 남습니다.</li>
+        <li><strong>숨을 불어 보세요.</strong> ‘숨 불어넣기’를 꾹 누르면 안개가 짙어지고 태양이 번집니다.</li>
+        <li><strong>누워서 위를 보세요.</strong> ‘바닥에 눕기’를 누르고 위쪽 천장 거울 속 내 모습(고리 표시)을 찾아보세요.</li>
+        <li><strong>태양 바로 아래까지</strong> 가면 빛의 구조가 드러납니다. ‘작품 이해’에서 거울 뒤편도 살펴볼 수 있습니다.</li>
+        <li><strong>글자를 완성해 보세요.</strong> 거울 속 ‘태양’ 글자에 한 사람 자리가 비어 있습니다. 그 자리에 C자로 웅크려 누우면 완성됩니다. 방법은 ‘감상 단계 → 4 관객의 상호작용’에 있어요.</li>
+      </ol>
+      <p class="note">음성 안내나 화면 읽기로 감상하려면 맨 위 <strong>처음 화면</strong>에서 감상 방식을 고르세요.</p>
+    </div>
+    <div>
+      <h2>작품에 대해</h2>
+      <p>2003년 테이트 모던 터빈 홀(길이 약 155m)에는 반원형 램프와 천장 거울, 인공 안개로 만든 태양이 떠 있었습니다. 관람객은 바닥에 눕고, 손을 흔들고, 몸으로 글자를 만들어 거울에 비춰 보았습니다. 이곳에서는 걷거나 숨을 불어넣으며 그 공간을 탐색할 수 있습니다. 가상 관람객 여섯 명이 함께 걷고, ‘관객의 상호작용’을 열면 열세 명이 바닥에 누워 몸으로 거울 속 글자를 씁니다. 공동 감상이 지원되는 공유 환경에서는 접속한 관람객도 거울에 비칩니다.</p>
+      <p class="note">감각 확장에 참고한 전시 · 헨리 무어 인스티튜트, 도큐멘타, teamLab</p>
+    </div>
+  </section>
+</div>
+
+<dialog class="mode keys" id="keysDialog" aria-labelledby="keysTitle">
+  <h2 id="keysTitle">단축키</h2>
+  <p>스크린리더를 쓴다면 ‘터빈 홀’ 탐색 공간에 포커스를 두면 바로 동작합니다. 한글 입력 상태에서도 됩니다.</p>
+  <div class="keygrid">
+    <section><h3>걷고 느끼기</h3><dl>
+      <dt><kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd></dt><dd>한 걸음 이동 (약 9m)</dd>
+      <dt><kbd>Space</kbd></dt><dd>누르는 동안 숨 불기</dd>
+      <dt><kbd>B</kbd></dt><dd>3초 동안 숨 불기</dd>
+      <dt><kbd>L</kbd></dt><dd>눕기 / 일어서기</dd>
+      <dt><kbd>A</kbd></dt><dd>누운 모양 바꾸기</dd>
+      <dt><kbd>D</kbd></dt><dd>누운 몸 45도 돌리기</dd>
+      <dt><kbd>O</kbd></dt><dd>글자의 빈 자리로 걷기</dd>
+      <dt><kbd>G</kbd></dt><dd>태양 아래로 걸어가기</dd>
+      <dt><kbd>Home</kbd> <kbd>0</kbd></dt><dd>시작 위치로</dd>
+      <dt><kbd>X</kbd></dt><dd>이동 멈추기</dd>
+      <dt><kbd>U</kbd> <kbd>Backspace</kbd></dt><dd>되돌리기</dd>
+    </dl></section>
+    <section><h3>감상 단계</h3><dl>
+      <dt><kbd>1</kbd></dt><dd>전체 듣기</dd>
+      <dt><kbd>2</kbd></dt><dd>초점 · 다음 항목</dd>
+      <dt><kbd>3</kbd></dt><dd>손끝 탐색 켜기·끄기</dd>
+      <dt><kbd>4</kbd></dt><dd>관객의 상호작용</dd>
+      <dt><kbd>.</kbd></dt><dd>다음 탐색 지점</dd>
+      <dt><kbd>+</kbd> <kbd>-</kbd></dt><dd>말 빠르기</dd>
+    </dl></section>
+    <section><h3>듣기</h3><dl>
+      <dt><kbd>S</kbd> <kbd>W</kbd></dt><dd>지금 상태·위치</dd>
+      <dt><kbd>I</kbd></dt><dd>작품 소개</dd>
+      <dt><kbd>H</kbd></dt><dd>조작법</dd>
+      <dt><kbd>R</kbd></dt><dd>다시 듣기</dd>
+      <dt><kbd>Esc</kbd></dt><dd>음성 멈추기</dd>
+      <dt><kbd>N</kbd></dt><dd>주변 관람객</dd>
+      <dt><kbd>P</kbd></dt><dd>감상 기록</dd>
+    </dl></section>
+    <section><h3>작품 이해</h3><dl>
+      <dt><kbd>V</kbd></dt><dd>천장 거울의 원리</dd>
+      <dt><kbd>K</kbd></dt><dd>태양·안개 소리의 의미</dd>
+      <dt><kbd>T</kbd></dt><dd>거울 뒤 구조 보기</dd>
+      <dt><kbd>E</kbd></dt><dd>거울 뒤 구조 탐색</dd>
+    </dl></section>
+    <section><h3>설정</h3><dl>
+      <dt><kbd>M</kbd></dt><dd>감상 모드 바꾸기</dd>
+      <dt><kbd>F</kbd></dt><dd>자동 안내 빈도</dd>
+      <dt><kbd>Q</kbd></dt><dd>전체 음소거</dd>
+      <dt><kbd>C</kbd></dt><dd>기기 지원 확인</dd>
+      <dt><kbd>?</kbd></dt><dd>이 창 열기</dd>
+    </dl></section>
+  </div>
+  <div class="choices"><button id="keysClose" type="button">닫기</button></div>
+</dialog>
+
+<script>
+(() => {
+  // 홀과 관람객 상태
+  // x는 홀의 좌우(-1~1), z는 입구(0)에서 태양이 있는 벽(1)까지의 위치.
+  const HALL_LEN = 155;
+  const me = { x: 0, z: 0.12, tx: 0, tz: 0.12, lying: false, pose: 'I', ang: 0, trail: [] };
+  let fog = 0.25, breathing = false, trussView = false;
+  let trussLocked = false;
+  let pointersDown = 0, dest = null, lieOnArrive = false;
+  const showTruss = () => trussView || trussLocked;
+  let mode = 'visual';
+  let tour = null;
+  const isAssisted = () => mode !== 'visual';
+  let soundOn = false, audio = null;
+  let peers = [];
+  let room = null;
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const npcs = Array.from({length: 6}, (_, i) => ({
+    x: (Math.random()*1.6-0.8), z: 0.2+Math.random()*0.7,
+    tx: 0, tz: 0, lying: i === 1 || i === 4, wait: Math.random()*4
+  }));
+  npcs.forEach(n => { n.tx = n.x; n.tz = n.z; });
+
+  const blobs = Array.from({length: 14}, () => ({
+    u: Math.random(), v: Math.random()*0.8+0.1, r: 0.15+Math.random()*0.25, s: 0.005+Math.random()*0.012
+  }));
+
+  // 캔버스와 좌표 변환
+  const mirror = document.getElementById('mirror'), hall = document.getElementById('hall');
+  const mctx = mirror.getContext('2d'), hctx = hall.getContext('2d');
+  let MW=0, MH=0, HW=0, HH=0, dpr = 1;
+  const E = 0.35, D = 0.35;
+  let camera;
+  function resize(){
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    const w = mirror.parentElement.clientWidth;
+    MW = w; MH = Math.round(Math.max(130, Math.min(300, w*0.27)));
+    HW = w; HH = Math.round(Math.max(280, Math.min(600, w*0.6)));
+    const f = 0.5228*HH, s1 = f/(1+D);
+    camera = { f, hy: 0.447*HH, kx: (0.215*HH)/s1, cx: HW/2 };
+    for (const [c, W, H] of [[mirror, MW, MH], [hall, HW, HH]]) {
+      c.width = W*dpr; c.height = H*dpr; c.style.height = H + 'px';
+    }
+  }
+  addEventListener('resize', resize); resize();
+
+  // 거울 좌표에서 태양은 오른쪽에 있다.
+  const MP = 14;
+  const m2s = (x, z) => [MP + z*(MW-2*MP), MH/2 + x*(MH/2-MP)];
+  const s2m = (sx, sy) => [clamp((sy-MH/2)/(MH/2-MP), -1, 1), clamp((sx-MP)/(MW-2*MP), 0, 1)];
+
+  // 터빈 홀 원근 투영
+  function proj(x, y, z){ const c = camera, s = c.f/(z+D); return [c.cx + x*s*c.kx, c.hy + (E-y)*s, s]; }
+  function unproj(sx, sy){
+    const c = camera; const dy = sy - c.hy; if (dy <= 2) return null;
+    let z = c.f*E/dy - D; z = clamp(z, 0, 1);
+    const s = c.f/(z+D); const x = clamp((sx - c.cx)/(s*c.kx), -0.97, 0.97);
+    return [x, z];
+  }
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  // 누운 모양: 위에서 내려다본 몸의 뼈대. 몸 길이 1, 머리는 -y, 발은 +y, (0,0)이 몸의 기준점.
+  const arcPts = (r, a0, a1, n = 16) => Array.from({length: n + 1}, (_, i) => { const t = (a0 + (a1 - a0)*i/n)*Math.PI/180; return [r*Math.cos(t), r*Math.sin(t)]; });
+  const C_R = 0.27;
+  const LEGS = [[[0,-0.32],[0,0.08]], [[0,0.08],[-0.05,0.5]], [[0,0.08],[0.05,0.5]]];
+  const POSES = {
+    I: { name: '일자', desc: '팔다리를 몸에 붙이고 반듯이 누운 모양', head: [0,-0.41], lines: [...LEGS, [[0,-0.27],[-0.09,0.05]], [[0,-0.27],[0.09,0.05]]] },
+    T: { name: 'T자 팔 벌리기', desc: '두 팔을 양옆으로 곧게 벌린 모양', head: [0,-0.41], lines: [...LEGS, [[-0.42,-0.27],[0.42,-0.27]]] },
+    Y: { name: 'Y자 만세', desc: '두 팔을 머리 위로 비스듬히 뻗은 모양', head: [0,-0.41], lines: [...LEGS, [[-0.27,-0.62],[0,-0.27],[0.27,-0.62]]] },
+    X: { name: '큰 대(大)자', desc: '팔과 다리를 모두 크게 벌린 모양', head: [0,-0.41], lines: [[[0,-0.32],[0,0.06]], [[-0.26,0.48],[0,0.06],[0.26,0.48]], [[-0.34,-0.55],[0,-0.27],[0.34,-0.55]]] },
+    C: { name: 'C자 웅크리기', desc: '옆으로 누워 무릎을 당기고 등을 둥글게 만 모양', head: [C_R*Math.cos(-1.08), C_R*Math.sin(-1.08)],
+         lines: [arcPts(C_R, -82, -292), [[-0.05,-0.26],[0.1,-0.06]], [[-0.1,0.25],[0.06,0.1]]] }
+  };
+  const POSE_KEYS = Object.keys(POSES);
+  // a = 머리→발 방향(거울 화면 기준 각도). 거울 화면의 오른쪽 = 태양 쪽, 아래쪽 = 오른쪽 벽.
+  const rotP = ([lx, ly], a) => { const f = (a - 90)*Math.PI/180, co = Math.cos(f), si = Math.sin(f); return [lx*co - ly*si, lx*si + ly*co]; };
+  function strokeBody(c, pose, a, map, lw, headR){
+    const P = POSES[pose] || POSES.I;
+    c.lineWidth = lw; c.lineCap = 'round'; c.lineJoin = 'round';
+    c.beginPath();
+    for (const line of P.lines) line.forEach((pt, i) => { const q = map(rotP(pt, a)); i ? c.lineTo(q[0], q[1]) : c.moveTo(q[0], q[1]); });
+    c.stroke();
+    const h = map(rotP(P.head, a));
+    c.beginPath(); c.arc(h[0], h[1], headR, 0, Math.PI*2); c.fill();
+  }
+  const bodyPx = () => Math.max(8, Math.min(MH*0.24, (MW - 2*MP)*0.06));   // 거울 속 누운 몸 길이(px)
+  const BODY_X = 1.5/11.5, BODY_Z = 1.5/HALL_LEN;                         // 홀 바닥에서의 몸 길이(좌표)
+  function dirWord(u, v){
+    const deg = ((Math.round(Math.atan2(v, u)*180/Math.PI/45)*45) % 360 + 360) % 360;
+    return { 0: '태양 쪽', 45: '태양 쪽과 오른쪽 벽 사이', 90: '오른쪽 벽 쪽', 135: '입구 쪽과 오른쪽 벽 사이',
+             180: '입구 쪽', 225: '입구 쪽과 왼쪽 벽 사이', 270: '왼쪽 벽 쪽', 315: '태양 쪽과 왼쪽 벽 사이' }[deg];
+  }
+  const headWord = () => dirWord(...rotP([0, -1], me.ang));
+  const backDir = a => rotP([-1, 0], a);                                   // C자의 둥근 등 방향
+  function poseWords(){
+    let s = `${POSES[me.pose].name}, 머리는 ${headWord()}`;
+    if (me.pose === 'C') s += `, 둥근 등은 ${dirWord(...backDir(me.ang))}`;
+    return s;
+  }
+
+  // 관객의 상호작용: 누운 관람객 13명이 거울 속에 '태양'을 쓰고, 받침 ㅇ의 오른쪽 반이 비어 있다.
+  const SLOT = { x: 0.30, z: 0.54 };            // 빈 자리(홀 좌표). 시작 위치에서 방향키로 딱 맞게 닿는 자리
+  const SLOT_TOL = 0.031;
+  const LETTER_ANCHOR = [3.9, 0.85];            // 글자 배치에서 빈 자리의 위치
+  const LETTER = [                              // [가로, 세로(몸 길이 단위), 머리→발 각도, 모양]
+    [0, 0, 90, 'I'], [0.55, -0.45, 0, 'I'], [0.55, 0, 0, 'I'], [0.55, 0.45, 0, 'I'],   // ㅌ
+    [1.45, 0, 270, 'I'], [1.975, 0, 0, 'I'], [2.5, 0, 90, 'I'],                         // ㅐ
+    [3.35, 0, 90, 'C'], [3.35, 0, 270, 'C'],                                             // ㅇ
+    [4.0, 0, 90, 'I'], [4.5, -0.2, 180, 'I'], [4.5, 0.2, 180, 'I'],                      // ㅑ
+    [3.9, 0.85, 90, 'C']                                                                  // 받침 ㅇ의 왼쪽 반
+  ];
+  let letterCache = [], letterKey = '';
+  function letterBodies(){
+    const key = MW + 'x' + MH;
+    if (key === letterKey) return letterCache;
+    const B = bodyPx(), [ox, oy] = m2s(SLOT.x, SLOT.z);
+    letterCache = LETTER.map(([u, v, a, pose], i) => {
+      const sx = ox + (u - LETTER_ANCHOR[0])*B, sy = oy + (v - LETTER_ANCHOR[1])*B;
+      return { id: 'g' + i, x: (sy - MH/2)/(MH/2 - MP), z: (sx - MP)/(MW - 2*MP), lying: true, pose, ang: a, npc: true, group: true };
+    });
+    letterKey = key;
+    return letterCache;
+  }
+  function inLetterZone(x, z){
+    let x0 = SLOT.x, x1 = SLOT.x, z0 = SLOT.z, z1 = SLOT.z;
+    for (const b of letterBodies()) { x0 = Math.min(x0, b.x); x1 = Math.max(x1, b.x); z0 = Math.min(z0, b.z); z1 = Math.max(z1, b.z); }
+    return x > x0 - 0.15 && x < x1 + 0.15 && z > z0 - 0.045 && z < z1 + 0.045;
+  }
+  function pickFree(n){ for (let k = 0; k < 20; k++) { n.tx = Math.random()*1.7-0.85; n.tz = 0.15+Math.random()*0.8; if (!inLetterZone(n.tx, n.tz)) return; } }
+  const NPC_POSE = [['I', 0], ['T', 90], ['X', 0], ['Y', 180], ['I', 270], ['C', 90]];
+  npcs.forEach((n, i) => {
+    n.pose = NPC_POSE[i][0]; n.ang = NPC_POSE[i][1];
+    if (inLetterZone(n.x, n.z)) { pickFree(n); n.x = n.tx; n.z = n.tz; }
+    n.tx = n.x; n.tz = n.z;
+  });
+  let slotWasFilled = false, slotCueGiven = false;
+  // 글자 만들기는 '관객의 상호작용'을 열었을 때만 나타난다. letterFade는 서서히 나타나고 사라지는 정도.
+  let letterOn = false, letterFade = 0;
+  function setLetterOn(v){
+    if (letterOn === v) return;
+    letterOn = v;
+    if (v) npcs.forEach(n => { if (!n.lying && inLetterZone(n.tx, n.tz)) pickFree(n); });   // 걷던 관람객은 자리를 비켜 준다
+    else { slotWasFilled = false; slotCueGiven = false; }
+  }
+  const atSlot = () => Math.abs(me.x - SLOT.x) <= SLOT_TOL && Math.abs(me.z - SLOT.z) <= SLOT_TOL;
+  const nearSlot = () => letterOn && Math.abs(me.x - SLOT.x) <= 0.08 && Math.abs(me.z - SLOT.z) <= 0.08;
+  const poseFits = () => me.pose === 'C' && backDir(me.ang)[0] > 0.6;
+  const slotFilledNow = () => letterOn && me.lying && atSlot() && poseFits();
+  function slotHint(){
+    if (!nearSlot() || slotFilledNow()) return '';
+    if (!me.lying) return ' 이곳이 태양 글자의 빈 자리입니다. 바닥에 누워 C자로 웅크려 보세요.';
+    if (!atSlot()) return ' 빈 자리에서 조금 벗어나 있습니다. 일어나 빈 자리 가운데로 옮긴 뒤 다시 누우세요. O 키로 정확한 자리까지 걸어갈 수 있습니다.';
+    if (me.pose !== 'C') return ' 이 빈 자리는 C자로 웅크린 몸이 들어갈 자리입니다. A 키나 ‘C 웅크리기’ 버튼으로 모양을 바꿔 보세요.';
+    return ` C자 모양은 맞습니다. 둥근 등이 태양 쪽을 향해야 왼쪽 사람과 동그라미를 이룹니다. 지금 둥근 등은 ${eul(dirWord(...backDir(me.ang)))} 향합니다. D 키나 ‘몸 돌리기’로 돌려 보세요.`;
+  }
+
+  // 누운 모양 고르기와 몸 돌리기
+  const poseBtns = [...document.querySelectorAll('#poseBar [data-pose]')];
+  const rotateBtn = document.getElementById('rotateBtn');
+  function syncPoseUI(){
+    poseBtns.forEach(b => b.setAttribute('aria-pressed', String(me.lying && b.dataset.pose === me.pose)));
+    rotateBtn.setAttribute('aria-label', `몸 45도 돌리기, 지금 머리는 ${headWord()}`);
+  }
+  function poseFeedback(msg){ if (!slotFilledNow()) feedback(msg + slotHint(), { level: 'state' }); }
+  function choosePose(p){
+    pushHistory(me.lying ? '모양 바꾸기' : '눕기');
+    me.pose = p;
+    if (!me.lying) { setLying(true); return; }
+    sfx.lie(true);
+    syncPoseUI();
+    poseFeedback(`${poseWords()}. ${POSES[p].desc}입니다.`);
+  }
+  function cyclePose(){ choosePose(me.lying ? POSE_KEYS[(POSE_KEYS.indexOf(me.pose) + 1) % POSE_KEYS.length] : me.pose); }
+  function rotateBody(){
+    pushHistory('몸 돌리기');
+    me.ang = (me.ang + 45) % 360;
+    tone(500 + me.ang, 0.1, { type: 'triangle', gain: 0.06 });
+    syncPoseUI();
+    if (!me.lying) { feedback(`누우면 머리가 ${eul(headWord())} 향합니다.`, { level: 'state' }); return; }
+    poseFeedback(`몸을 돌렸습니다. ${poseWords()}.`);
+  }
+  poseBtns.forEach(b => b.addEventListener('click', () => choosePose(b.dataset.pose)));
+  rotateBtn.addEventListener('click', rotateBody);
+  syncPoseUI();
+
+  // 안개 텍스처: 이어 붙일 수 있는 여러 겹의 값 노이즈로 구름 같은 안개 이미지를 만든다.
+  function makeFogTex(w, h, seed, { gx, gy, cut, pow, col, mask }){
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+    const g = cv.getContext('2d'), img = g.createImageData(w, h), d = img.data;
+    let s = seed; const rnd = () => (s = (s*16807) % 2147483647) / 2147483647;
+    for (let i = 0; i < 12; i++) rnd();
+    const octs = [];
+    for (let o = 0, ox = gx, oy = gy, amp = 1; o < 5; o++, ox *= 2, oy *= 2, amp *= 0.5) octs.push({ ox, oy, amp, v: Float32Array.from({length: ox*oy}, () => rnd()) });
+    const sm = t => t*t*(3 - 2*t);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      let n = 0, tot = 0;
+      for (const o of octs) {
+        const fx = x/w*o.ox, fy = y/h*o.oy, ix = Math.floor(fx), iy = Math.floor(fy), tx = sm(fx - ix), ty = sm(fy - iy);
+        const x0 = ix % o.ox, x1 = (ix + 1) % o.ox, y0 = iy % o.oy, y1 = (iy + 1) % o.oy;
+        const a = o.v[y0*o.ox + x0], b = o.v[y0*o.ox + x1], c = o.v[y1*o.ox + x0], e = o.v[y1*o.ox + x1];
+        n += o.amp*((a + (b - a)*tx)*(1 - ty) + (c + (e - c)*tx)*ty); tot += o.amp;
+      }
+      const al = Math.pow(clamp((n/tot - cut)/(1 - cut), 0, 1), pow)*mask(x/w, y/h);
+      const i = (y*w + x)*4; d[i] = col[0]; d[i+1] = col[1]; d[i+2] = col[2]; d[i+3] = Math.round(al*255);
+    }
+    g.putImageData(img, 0, 0);
+    return cv;
+  }
+  const bandMask = (u, v) => Math.pow(Math.sin(Math.PI*v), 1.3);
+  const fogTexA = makeFogTex(256, 128, 7, { gx: 4, gy: 2, cut: 0.3, pow: 1.25, col: [255, 196, 124], mask: bandMask });
+  const fogTexB = makeFogTex(256, 128, 911, { gx: 3, gy: 2, cut: 0.36, pow: 1.1, col: [255, 172, 98], mask: bandMask });
+  const puffTex = makeFogTex(128, 128, 4242, { gx: 3, gy: 3, cut: 0.3, pow: 1.3, col: [255, 184, 110],
+    mask: (u, v) => Math.pow(clamp(1 - Math.hypot(u - 0.5, v - 0.5)*2, 0, 1), 1.6) });
+  const puffs = []; let puffAcc = 0;                // 숨결 안개 입자
+  function fogSheet(c, W, tex, y0, h, speed, alpha, scaleX, now){
+    if (alpha < 0.004) return;
+    const w = W*scaleX, drift = reduceMotion ? 0 : now/1000*speed*W;
+    const off = ((drift % w) + w) % w;
+    c.globalAlpha = Math.min(1, alpha);
+    for (let x = off - w; x < W; x += w) c.drawImage(tex, x, y0, w + 1, h);
+    c.globalAlpha = 1;
+  }
+
+  // 이동, 자세, 숨과 단축키
+  function bindWalk(canvas, toFloor, isMirror){
+    let down = false, sx0 = 0, sy0 = 0, holdTimer = null;
+    const pos = e => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+    canvas.addEventListener('pointerdown', e => {
+      canvas.setPointerCapture(e.pointerId); down = true; pointersDown++;
+      const [sx, sy] = pos(e); sx0 = sx; sy0 = sy;
+      cancelTour();
+      if (!isMirror && exploring) { exploreAt(sx, sy); return; }
+      const p = toFloor(sx, sy); if (p) { pushHistory('누른 자리로 이동'); dest = { name: '선택한 자리' }; pendingArrive = false; setTarget(p[0], p[1]); }
+      if (isMirror) holdTimer = setTimeout(() => { trussView = true; buzz([20]); onTrussFound(); }, 700);
+    });
+    canvas.addEventListener('pointermove', e => {
+      if (!isMirror && exploring) { const [ex, ey] = pos(e); if (down || e.pointerType === 'mouse') exploreAt(ex, ey); return; }
+      if (!down) return; const [sx, sy] = pos(e);
+      if (Math.hypot(sx-sx0, sy-sy0) > 8) { clearTimeout(holdTimer); }
+      if (!trussView) { const p = toFloor(sx, sy); if (p) setTarget(p[0], p[1]); }
+    });
+    const up = e => { if (!isMirror && exploring) { exploreEnd(); if (down && e.type === 'pointerup' && preview && !curSpot) feedback(previewStatus.textContent, { auto: false }); } if (down) pointersDown = Math.max(0, pointersDown - 1); down = false; clearTimeout(holdTimer); trussView = false; };
+    canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up);
+    canvas.addEventListener('pointerleave', () => { if (!isMirror && exploring) exploreEnd(); });
+  }
+  bindWalk(mirror, s2m, true);
+  bindWalk(hall, unproj, false);
+
+  function setTarget(x, z){
+    cancelTour();
+    if (me.lying) setLying(false);
+    me.tx = clamp(x, -0.97, 0.97); me.tz = clamp(z, 0, 1);
+  }
+
+  const breathBtn = document.getElementById('breath');
+  // 숨: 포인터는 누르는 동안, 키보드(Space/Enter)는 누르는 동안, 스크린리더 클릭·B 키는 약 3초
+  let breathPulseTimer = null, fogWasThick = false;
+  function fogWord(){ return fog > 0.7 ? '아주 짙음' : fog > 0.45 ? '짙음' : '옅음'; }
+  function setBreathing(v){
+    if (breathing === v) return;
+    breathing = v;
+    whoosh(v);
+    if (v) feedback('안개가 짙어집니다.' + (sensory.air ? ' 바람도 강해집니다.' : ''), { level: 'detail' });
+    else {
+      cancelBreathPulse();
+      markJourney('breath');
+      feedback('숨을 멈췄습니다. 안개가 서서히 걷힙니다.');
+    }
+  }
+  function cancelBreathPulse(){
+    clearTimeout(breathPulseTimer);
+    breathPulseTimer = null;
+  }
+  function breathPulse(){
+    cancelBreathPulse();
+    setBreathing(true);
+    breathPulseTimer = setTimeout(() => setBreathing(false), 3000);
+  }
+  function startBreath(){ cancelBreathPulse(); setBreathing(true); }
+  function stopBreath(){ if (breathPulseTimer === null) setBreathing(false); }
+  breathBtn.addEventListener('pointerdown', e => { e.preventDefault(); startBreath(); });
+  ['pointerup','pointerleave','pointercancel'].forEach(t => breathBtn.addEventListener(t, stopBreath));
+  breathBtn.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); if (!e.repeat) startBreath(); } });
+  breathBtn.addEventListener('keyup', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); setBreathing(false); } });
+  // 스크린리더의 가상 클릭(detail 0)은 누르고 있을 수 없으므로 짧은 숨으로 처리
+  breathBtn.addEventListener('click', e => { if (e.detail === 0) breathPulse(); });
+  addEventListener('blur', () => { if (breathing) setBreathing(false); });
+
+  const lieBtn = document.getElementById('lie');
+  function setLying(v){
+    me.lying = v; me.tx = me.x; me.tz = me.z;
+    lieBtn.setAttribute('aria-pressed', String(v));
+    lieBtn.textContent = v ? '일어서기' : '바닥에 눕기';
+    syncPoseUI();
+    sfx.lie(v);
+    if (v) markJourney('lie');
+    if (v && slotFilledNow()) return;   // 글자 완성 안내는 step()에서 한 번만
+    feedback(v
+      ? `바닥에 누웠습니다. 모양은 ${poseWords()}입니다. 거울에 몸 전체가 비치고 위쪽 울림이 낮아집니다. A 키로 모양, D 키로 방향을 바꿀 수 있고, 이동하면 다시 일어섭니다.` + slotHint()
+      : '일어섰습니다.', { level: 'state' });
+  }
+  function userToggleLie(){ pushHistory(me.lying ? '일어서기' : '눕기'); setLying(!me.lying); }
+  lieBtn.addEventListener('click', userToggleLie);
+
+  // 한 걸음 이동과 벽 감지
+  const STEP = 0.06, XLIM = 0.97;
+  let pendingArrive = false, lastMoveKey = 0, wallNote = '', zoneNote = '';
+  function keyMove(dx, dz){
+    const rx = me.x + dx, rz = me.z + dz;
+    const cx = clamp(rx, -XLIM, XLIM), cz = clamp(rz, 0, 1);
+    let wall = '';
+    if (dx < 0 && rx < -XLIM) wall = '왼쪽 벽';
+    else if (dx > 0 && rx > XLIM) wall = '오른쪽 벽';
+    else if (dz < 0 && rz < 0) wall = '입구 쪽 벽';
+    else if (dz > 0 && rz > 1) wall = '태양이 걸린 끝 벽';
+    const blocked = Math.hypot(cx - me.x, cz - me.z) < 0.005;
+    lastMoveKey = performance.now();
+    if (blocked) {
+      sfx.wall(dx < 0 ? -0.9 : dx > 0 ? 0.9 : 0);
+      feedback(`${wall}입니다. 더 갈 수 없습니다.`, { level: 'state' });
+      return;
+    }
+    pushHistory('한 걸음 이동');
+    dest = null;
+    setTarget(cx, cz);
+    sfx.step();
+    wallNote = wall ? `${wall}에 닿았습니다.` : '';
+    if (wall) sfx.wall(dx < 0 ? -0.9 : dx > 0 ? 0.9 : 0);
+    pendingArrive = true;
+  }
+
+  addEventListener('keydown', e => {
+    const t = e.target; if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+    if (document.querySelector('dialog[open]')) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (tour && ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Home','Backspace',' '].includes(e.key)) cancelTour();
+    const free = t === document.body || t === hall || t === mirror;
+    if (e.key === ' ' && free) { e.preventDefault(); if (!e.repeat) startBreath(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); keyMove(0, STEP); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); keyMove(0, -STEP); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); keyMove(-STEP, 0); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); keyMove(STEP, 0); }
+    else if (e.key === 'Escape') stopNarration();
+    else if (e.key === 'Home') { e.preventDefault(); goHome(); }
+    else if (e.key === 'Backspace' && free) { e.preventDefault(); undoAction(); }
+    else if (e.repeat) return;
+    else {
+      const k = e.key.toLowerCase();
+      const map = {
+        l: userToggleLie, ㅣ: userToggleLie,
+        w: speakWhere, ㅈ: speakWhere,
+        x: haltMove, ㅌ: haltMove,
+        u: undoAction, ㅕ: undoAction,
+        q: toggleMute, ㅂ: toggleMute,
+        f: cycleVerbosity, ㄹ: cycleVerbosity,
+        c: speakDevice, ㅊ: speakDevice,
+        '0': goHome, '?': openKeys,
+        '1': playIntro, '2': nextFocus, '3': () => setExploring(!exploring), '.': nextSpot,
+        '+': () => stepRate(1), '=': () => stepRate(1), '-': () => stepRate(-1),
+        m: toggleMode, ㅡ: toggleMode,
+        i: playIntro, ㅑ: playIntro,
+        h: playHelp, ㅗ: playHelp,
+        r: repeatLast, ㄱ: repeatLast,
+        s: speakStatus, ㄴ: speakStatus,
+        t: toggleTruss, ㅅ: toggleTruss,
+        g: goToSun, ㅎ: goToSun,
+        b: breathPulse, ㅠ: breathPulse,
+        p: speakJourney, ㅔ: speakJourney,
+        v: () => speakFocus(1), ㅍ: () => speakFocus(1),
+        e: exploreTruss, ㄷ: exploreTruss,
+        k: speakMeaning, ㅏ: speakMeaning,
+        n: speakNearby, ㅜ: speakNearby,
+        a: cyclePose, ㅁ: cyclePose,
+        d: rotateBody, ㅇ: rotateBody,
+        o: goToSlot, ㅐ: goToSlot,
+        '4': openInteract
+      };
+      if (map[k]) { if (tour) stopSpeech(); e.preventDefault(); map[k](); }
+    }
+  });
+  addEventListener('keyup', e => {
+    const t = e.target;
+    if (e.key === ' ' && (t === document.body || t === hall || t === mirror)) setBreathing(false);
+  });
+
+  // 공간 음향과 진동
+  const soundBtn = document.getElementById('sound');
+  function setSound(v, tell = true){
+    soundOn = v;
+    soundBtn.setAttribute('aria-pressed', String(soundOn));
+    soundBtn.textContent = soundOn ? '소리 끄기' : '소리로 감상하기';
+    if (soundOn) startAudio(); else stopAudio();
+    if (tell) feedback(soundOn ? '소리 감상을 켰습니다. 태양에 가까워질수록 소리가 높고 커지며, 홀의 왼쪽에 있으면 왼쪽 귀, 오른쪽에 있으면 오른쪽 귀에서 더 크게 들립니다.' : '소리를 껐습니다.', { level: 'state' });
+  }
+  soundBtn.addEventListener('click', () => setSound(!soundOn));
+  function startAudio(){
+    try {
+      if (!audio) {
+        const ac = new (window.AudioContext || window.webkitAudioContext)();
+        const o1 = ac.createOscillator(), o2 = ac.createOscillator(), o3 = ac.createOscillator();
+        o1.type = 'sine'; o2.type = 'triangle'; o3.type = 'sine';
+        const lp = ac.createBiquadFilter(); lp.type = 'lowpass';
+        const g = ac.createGain(); g.gain.value = 0;
+        const pan = ac.createStereoPanner ? ac.createStereoPanner() : null;
+        const g3 = ac.createGain(); g3.gain.value = 0.25;
+        o1.connect(lp); o2.connect(lp); o3.connect(g3); g3.connect(lp); lp.connect(g);
+        if (pan) { g.connect(pan); pan.connect(ac.destination); } else g.connect(ac.destination);
+        o1.start(); o2.start(); o3.start();
+        audio = { ac, o1, o2, o3, lp, g, pan };
+      }
+      audio.ac.resume();
+    } catch (err) { soundOn = false; showGuide('이 기기에서는 소리를 낼 수 없습니다.'); }
+  }
+  function stopAudio(){ if (audio) { audio.g.gain.setTargetAtTime(0, audio.ac.currentTime, 0.1); } }
+  function updateAudio(){
+    if (!audio || !soundOn) return;
+    const t = audio.ac.currentTime, c = me.z;
+    const base = 82 + c*110;
+    audio.o1.frequency.setTargetAtTime(base, t, 0.15);
+    audio.o2.frequency.setTargetAtTime(base*1.5, t, 0.15);
+    audio.o3.frequency.setTargetAtTime(base*(me.lying ? 2.0 : 3.0), t, 0.3);
+    audio.lp.frequency.setTargetAtTime(2400 - fog*2000, t, 0.2);
+    audio.g.gain.setTargetAtTime((0.04 + c*0.12)*bgLevel(), t, 0.15);
+    if (audio.pan) audio.pan.pan.setTargetAtTime(stereoOn ? me.x*0.85 : 0, t, 0.1);
+  }
+  function buzz(p){ try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} }
+  let lastBuzz = 0;
+
+  // 감각 확장
+  const sensory = { sense: false, air: false, together: false };
+  const sensoryStatusEl = document.getElementById('sensoryStatus');
+  const sensoryButtons = {
+    sense: document.getElementById('senseToggle'),
+    air: document.getElementById('windToggle'),
+    together: document.getElementById('togetherToggle')
+  };
+  const sensoryNames = { sense: '감각의 울림', air: '보이지 않는 바람', together: '함께 만드는 빛' };
+  for (const name of Object.keys(sensoryButtons)) {
+    sensoryButtons[name].addEventListener('click', () => {
+      sensory[name] = !sensory[name];
+      sensoryButtons[name].setAttribute('aria-pressed', String(sensory[name]));
+      sensoryButtons[name].textContent = `${sensoryNames[name]} · ${sensory[name] ? '켜짐' : '꺼짐'}`;
+      updateSensoryStatus();
+      fxCtx();                       // 사용자 동작 안에서 오디오 준비
+      describeSensoryToggle(name);
+    });
+  }
+  function describeSensoryToggle(name){
+    const on = sensory[name];
+    if (!on) {
+      if (name === 'together') nearIds = new Set();
+      feedback(`${sensoryNames[name]}을 껐습니다.`, { level: 'state' });
+      return;
+    }
+    if (name === 'sense') {
+      lastSense = 0;
+      feedback('감각의 울림을 켰습니다. 태양에 가까워질수록 한 번에서 세 번까지 울립니다. ' +
+        (canVibrate ? '휴대폰 진동으로 약 2초마다 전합니다.' : '이 기기는 진동을 지원하지 않아, 같은 리듬을 짧은 소리로 약 2초마다 들려 드립니다. 태양에 가까울수록 소리도 높아집니다.') +
+        ` 지금은 ${['한 번', '두 번', '세 번'][zoneOf(me.z)]} 울립니다.`, { level: 'state' });
+    } else if (name === 'air') {
+      feedback('보이지 않는 바람을 켰습니다. 공기가 왼쪽에서 오른쪽으로 흐릅니다. 걷거나 숨을 불어넣으면 바람이 세집니다.' +
+        (stereoOn && hasStereo ? '' : ' 지금은 좌우 소리를 쓸 수 없어, 바람의 흐름은 소리가 커졌다 작아지는 물결로만 들립니다.'), { level: 'state' });
+    } else {
+      nearIds = new Set(findNearbyPeople(buildPeople()).map(p => p.id));
+      feedback('함께 만드는 빛을 켰습니다. 관람객이 가까워지면 연결음이 나고, 거울 속에서 빛으로 이어집니다. 가까운 사람이 많을수록 태양의 후광이 넓어집니다. ' + nearbySummary(), { level: 'state' });
+    }
+  }
+  // 감각의 울림: 진동 미지원 기기는 같은 리듬을 짧은 효과음으로
+  const canVibrate = typeof navigator.vibrate === 'function' && /Android/i.test(navigator.userAgent);
+  let lastSense = 0;
+  function rhythmTones(pattern){
+    let t = 0;
+    pattern.forEach((ms, i) => {
+      if (i % 2 === 0) tone(330 + me.z*330, Math.max(0.07, ms/1000), { force: true, gain: 0.12, when: t/1000, type: 'sine', pan: me.x*0.6 });
+      t += Math.max(ms, i % 2 === 0 ? 70 : ms);
+    });
+  }
+  function senseSignal(){ const pat = distanceRhythm(); if (canVibrate) buzz(pat); else rhythmTones(pat); }
+  // 실제 촉각은 기기/브라우저 지원 여부에 달려 있으므로, 지원되지 않으면 같은 리듬을 소리로 들려줍니다.
+  let hapticNotice = '';
+  document.getElementById('sensePreview').addEventListener('click', () => {
+    fxCtx();
+    senseSignal();
+    const cnt = ['한 번 짧게', '두 번', '세 번 길게'][zoneOf(me.z)];
+    hapticNotice = canVibrate
+      ? '현재 거리의 진동을 요청했습니다. 기기 설정에 따라 동작하지 않을 수 있습니다.'
+      : '이 기기는 진동을 지원하지 않아 같은 리듬을 짧은 소리로 들려 드렸습니다.';
+    feedback(`${zoneText[zoneOf(me.z)]}이라 ${cnt} 울립니다. ` + hapticNotice, { level: 'state' });
+    updateSensoryStatus();
+  });
+
+  // 함께 만드는 빛: 접근·연결 감지, 상대 방향, 인원
+  let nearIds = new Set(), lastTogetherVoice = 0;
+  const M_PER_X = 11.5;   // 홀 너비 약 23m
+  function relDir(p){
+    const dx = p.x - me.x, dz = p.z - me.z;
+    const fb = dz > 0.05 ? '앞' : dz < -0.05 ? '뒤' : '';
+    const lr = dx > 0.15 ? '오른쪽' : dx < -0.15 ? '왼쪽' : '';
+    return lr && fb ? `${lr} ${fb}` : lr ? `${lr} 옆` : fb ? `바로 ${fb}` : '바로 곁';
+  }
+  const meters = p => Math.round(Math.hypot((p.x - me.x)*M_PER_X, (p.z - me.z)*HALL_LEN));
+  function nearbySummary(){
+    const people = buildPeople(), others_ = people.filter(p => !p.me);
+    const near = findNearbyPeople(people);
+    const nearest = others_.slice().sort((a, b) => meters(a) - meters(b))[0];
+    return `홀에 함께 있는 관람객 ${others_.length}명. ` +
+      (near.length ? `가까이 연결된 관람객 ${near.length}명, ${near.map(p => relDir(p) + ' 약 ' + meters(p) + '미터').join(', ')}. ` : '가까이 연결된 관람객은 없습니다. ') +
+      (nearest ? `가장 가까운 사람은 ${relDir(nearest)} 약 ${meters(nearest)}미터에 ${nearest.lying ? '누워' : '서'} 있습니다.` : '');
+  }
+  function speakNearby(){ feedback(nearbySummary() + (sensory.together ? '' : ' 함께 만드는 빛을 켜면 가까워질 때 빛으로 연결됩니다.'), { auto: false }); }
+  document.getElementById('nearbyBtn').addEventListener('click', speakNearby);
+  function updateTogether(near, now){
+    const ids = new Set(near.map(p => p.id));
+    const joined = near.filter(p => !nearIds.has(p.id));
+    const leftCount = [...nearIds].filter(id => !ids.has(id)).length;
+    nearIds = ids;
+    joined.forEach((p, i) => {
+      const pan = clamp((p.x - me.x)*1.6, -1, 1);
+      tone(784, 0.18, { force: true, gain: 0.08, pan, when: i*0.15 });
+      tone(1175, 0.35, { force: true, gain: 0.07, pan, when: i*0.15 + 0.1 });
+    });
+    if (leftCount) tone(392, 0.3, { force: true, gain: 0.05, slide: 0.8 });
+    if (now - lastTogetherVoice < 3500) return;
+    if (joined.length) {
+      lastTogetherVoice = now;
+      const p = joined[0];
+      feedback(`${p.real ? '관람객' : '가상 관람객'} ${joined.length > 1 ? joined.length + '명이' : '한 명이'} ${relDir(p)}에서 가까워져 빛으로 연결되었습니다. 지금 연결된 관람객 ${near.length}명, 태양의 후광이 ${near.length >= 3 ? '크게 ' : ''}넓어졌습니다.`, { interrupt: false });
+    } else if (leftCount && near.length === 0) {
+      lastTogetherVoice = now;
+      feedback('연결이 모두 끊어졌습니다. 태양의 후광이 원래대로 돌아왔습니다.', { interrupt: false, level: 'detail' });
+    }
+  }
+
+  // 보이지 않는 바람: 왼쪽→오른쪽으로 흐르는 방향성 바람 소리 (화면의 흐름선과 같은 속도)
+  const isWalking = () => Math.hypot(me.tx - me.x, me.tz - me.z) > 0.008;
+  const windSpeed = moving => breathing ? 0.18 : moving ? 0.10 : 0.035;
+  const windEnergy = moving => clamp(0.22 + (moving ? 0.25 : 0) + (breathing ? 0.5 : 0), 0, 1);
+  let wind = null, windPhase = 0, windLast = 0;
+  function updateWind(now){
+    const dt = windLast ? Math.min(0.1, (now - windLast)/1000) : 0; windLast = now;
+    if (!sensory.air) { if (wind && wind.on) { wind.on = false; wind.g.gain.setTargetAtTime(0, wind.c.currentTime, 0.3); } return; }
+    const c = fxCtx(); if (!c) return;
+    if (!wind) {
+      try {
+        const buf = c.createBuffer(1, c.sampleRate*2, c.sampleRate), d = buf.getChannelData(0);
+        let b = 0; for (let i = 0; i < d.length; i++) { b = 0.97*b + 0.03*(Math.random()*2 - 1); d[i] = b*6 + (Math.random()*2 - 1)*0.15; }
+        const src = c.createBufferSource(); src.buffer = buf; src.loop = true;
+        const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 500; bp.Q.value = 1;
+        const g = c.createGain(); g.gain.value = 0;
+        const pan = c.createStereoPanner ? c.createStereoPanner() : null;
+        src.connect(bp); bp.connect(g);
+        if (pan) { g.connect(pan); pan.connect(c.destination); } else g.connect(c.destination);
+        src.start();
+        wind = { c, src, bp, g, pan, on: true };
+      } catch (e) { return; }
+    }
+    wind.on = true;
+    const moving = isWalking();
+    const energy = windEnergy(moving);
+    const speed = windSpeed(moving);
+    windPhase = (windPhase + dt*speed/1.4*3) % 1;                     // 한 줄기가 왼쪽→오른쪽으로 지나감
+    const sweep = -1 + 2*windPhase;
+    const away = moving ? -Math.sign(me.tx - me.x)*0.3 : 0;            // 걸음 반대쪽으로 스침
+    const swell = 0.5 + 0.5*Math.sin(Math.PI*windPhase);
+    const rough = breathing ? 0.75 + 0.25*Math.sin(now/70) * Math.sin(now/23) : 1;
+    const t = c.currentTime;
+    wind.g.gain.setTargetAtTime((0.03 + energy*0.16)*swell*rough*bgLevel(), t, 0.08);
+    wind.bp.frequency.setTargetAtTime(breathing ? 1500 : 380 + energy*520, t, 0.25);
+    wind.bp.Q.setTargetAtTime(breathing ? 0.35 : 1.3, t, 0.25);
+    if (wind.pan) wind.pan.pan.setTargetAtTime(stereoOn ? clamp(sweep*0.8 + away, -1, 1) : 0, t, 0.1);
+  }
+  function distanceRhythm(){
+    // 멀리: 짧게 한 번, 중간: 두 번, 가까이: 길게 세 번
+    return me.z < 0.35 ? [28] : me.z < 0.75 ? [32, 95, 32] : [70, 70, 70, 70, 110];
+  }
+  function findNearbyPeople(people){
+    return people.filter(p => !p.me && Math.hypot((p.x-me.x)*0.55, p.z-me.z) < 0.29);
+  }
+  function updateSensoryStatus(near){
+    if (!sensory.sense && !sensory.air && !sensory.together) {
+      sensoryStatusEl.textContent = hapticNotice || '감각 기능이 모두 꺼져 있습니다.';
+      return;
+    }
+    const details = [];
+    if (sensory.sense) details.push('감각: ' + (me.z < 0.35 ? '먼 거리 · 짧은 울림' : me.z < 0.75 ? '중간 거리 · 두 번의 울림' : '태양 가까이 · 세 번의 울림'));
+    if (sensory.air) details.push('공기: ' + (breathing ? '숨결이 흐름을 키우는 중' : isWalking() ? '걸음이 바람을 일으키는 중' : '잔잔한 흐름'));
+    if (sensory.together) {
+      const count = (near ?? findNearbyPeople(buildPeople())).length;
+      details.push(`공동의 빛: 가까운 관람객 ${count}명`);
+    }
+    const text = details.join(' · ') + (hapticNotice ? ' · ' + hapticNotice : '');
+    if (sensoryStatusEl.textContent !== text) sensoryStatusEl.textContent = text;
+  }
+
+  // 위치와 감상 상태
+  const statusDistance = document.getElementById('statusDistance');
+  const statusDetails = document.getElementById('statusDetails');
+  function describe(){
+    const dist = Math.round((1-me.z)*HALL_LEN);
+    const side = me.x < -0.33 ? '왼쪽 벽 가까이' : me.x > 0.33 ? '오른쪽 벽 가까이' : '홀 가운데';
+    const fw = fogWord();
+    const n = peers.filter(p => !p.sameTab).length;
+    const who = room ? `지금 함께 있는 사람 ${n}명` : `가상 관람객 ${npcs.length + (letterOn ? LETTER.length : 0)}명과 함께`;
+    const atSunNow = me.z > 0.92 && Math.abs(me.x) < 0.6;
+    const sunDir = atSunNow ? '태양 바로 아래' : me.x < -0.33 ? '태양은 오른쪽 앞' : me.x > 0.33 ? '태양은 왼쪽 앞' : '태양은 정면';
+    return { dist, side, fogWord: fw, who, text: `태양까지 약 ${dist}미터, ${side}, ${sunDir}, ${me.lying ? '누워 있음' : '서 있음'}, 안개 ${fw}. ${who}.` };
+  }
+  function positionShort(){
+    const d = describe();
+    const walls = [];
+    if (me.x <= -0.95) walls.push('왼쪽 벽에 붙어 있음');
+    if (me.x >= 0.95) walls.push('오른쪽 벽에 붙어 있음');
+    if (me.z <= 0.01) walls.push('입구 바로 앞');
+    if (me.z >= 0.99) walls.push('끝 벽 바로 앞');
+    const side = Math.abs(me.x) >= 0.95 ? '' : `, ${d.side}`;
+    return `태양까지 약 ${d.dist}미터${side}` + (walls.length ? `, ${walls.join(', ')}` : '') + '.';
+  }
+  function statusLine(){
+    const d = describe();
+    const distance = `태양까지 약 ${d.dist}m`;
+    const details = ` · ${d.side} · ${me.lying ? '누워 있음' : '서 있음'} · 안개 ${d.fogWord} · ${d.who}`;
+    if (statusDistance.textContent !== distance) statusDistance.textContent = distance;
+    if (statusDetails.textContent !== details) statusDetails.textContent = details;
+  }
+  function speakStatus(){ feedback(describe().text, { auto: false }); }
+  document.getElementById('speak').addEventListener('click', speakStatus);
+
+  // 음성 안내와 화면 읽기
+  const liveEl = document.getElementById('a11yLive');
+  const hasTTS = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+  let visualTtsOn = true, lastSpoken = '', koVoice = null;
+  const ttsEnabled = () => hasTTS && (mode === 'nonvisual' || (mode === 'visual' && visualTtsOn));
+  function pickVoice(){ try { koVoice = speechSynthesis.getVoices().find(v => /^ko/i.test(v.lang)) || null; } catch (e) {} }
+  if (hasTTS) { pickVoice(); try { speechSynthesis.addEventListener('voiceschanged', pickVoice); } catch (e) {} }
+
+  let liveTimer = null;
+  function liveSay(msg){
+    clearTimeout(liveTimer);
+    liveEl.textContent = '';
+    liveTimer = setTimeout(() => { liveEl.textContent = msg; }, 60);
+  }
+  // 효과음이 끝난 뒤 음성을 시작하고(겹침 방지), 음성이 나오는 동안 배경음·효과음을 낮춤(더킹)
+  let sfxEndAt = 0, speakingCount = 0, speechVersion = 0;
+  const speechTimers = new Set();
+  const canSpeak = () => ttsEnabled() && !muted && voiceVol > 0 && !ttsFailed;
+  function isSpeaking(){ try { return speakingCount > 0 || speechSynthesis.speaking || speechTimers.size > 0; } catch (e) { return speakingCount > 0; } }
+  const splitSent = msg => (msg.match(/[^.!?]+[.!?]?/g) || [msg]).map(x => x.trim()).filter(Boolean);
+  let curMsg = '', curIdx = 0, curCompletion = null, paused = null;   // paused = { msg, idx }
+  function speakTTS(msg, interrupt, startIdx = 0, onComplete = null){
+    if (interrupt) stopSpeech({ keepTour: !!onComplete });
+    const version = speechVersion;
+    const parts = splitSent(msg);
+    function fallback(){
+      if (version !== speechVersion) return;
+      ttsFailed = true;
+      stopSpeech({ keepTour: true });
+      if (tour) { tour.phase = 'manual'; updateTourControls(); }
+      liveSay(msg);
+    }
+    function play(){
+      if (version !== speechVersion || !canSpeak()) return;
+      try {
+        for (let i = startIdx; i < parts.length; i++) {
+          const u = new SpeechSynthesisUtterance(parts[i]);
+          u.lang = 'ko-KR'; u.rate = voiceRate; u.volume = voiceVol;
+          if (koVoice) u.voice = koVoice;
+          u.onstart = () => {
+            if (version !== speechVersion) return;
+            speakingCount++; curMsg = msg; curIdx = i; curCompletion = onComplete;
+            highlightSentence(msg, i);
+          };
+          u.onend = () => {
+            if (version !== speechVersion) return;
+            speakingCount = Math.max(0, speakingCount - 1);
+            if (i === parts.length - 1) {
+              curCompletion = null;
+              onComplete?.();
+            }
+          };
+          u.onerror = e => { if (e.error !== 'interrupted' && e.error !== 'canceled') fallback(); };
+          speechSynthesis.speak(u);
+        }
+      } catch (e) { fallback(); }
+    }
+    const wait = Math.min(700, Math.max(0, sfxEndAt - performance.now()));
+    if (wait <= 30) { play(); return; }
+    const timer = setTimeout(() => { speechTimers.delete(timer); play(); }, wait);
+    speechTimers.add(timer);
+  }
+  // 안내 단계: state(내 조작에 대한 응답, 항상) · major(주요 이벤트) · detail(상세)
+  let verbosity = 'detail', muted = false, voiceVol = 1, voiceRate = 1.1, volBg = 0.7, volFx = 0.8, stereoOn = true, ttsFailed = false;
+  const LEVEL_RANK = { state: 0, major: 1, detail: 2 };
+  const VERB_RANK = { off: 0, major: 1, detail: 2 };
+  const duck = () => isSpeaking() ? 0.35 : 1;
+  const bgLevel = () => muted ? 0 : volBg*duck();
+  const fxLevel = () => muted ? 0 : volFx*(isSpeaking() ? 0.5 : 1);
+  // 해설 글 칸: 문장 단위로 나눠 두고, 읽는 문장을 밝게 강조
+  const guideEl = document.getElementById('guideText');
+  let guideMsg = '';
+  function showGuide(msg){
+    guideMsg = msg; guideEl.innerHTML = '';
+    const b = document.createElement('b'); b.textContent = '최근 안내';
+    guideEl.append(b, document.createTextNode(' · '));
+    splitSent(msg).forEach(t => { const sp = document.createElement('span'); sp.className = 'sent'; sp.textContent = t + ' '; guideEl.append(sp); });
+  }
+  function highlightSentence(msg, i){
+    if (guideMsg !== msg) showGuide(msg);
+    const sents = guideEl.querySelectorAll('.sent');
+    sents.forEach((el, k) => el.classList.toggle('now', k === i));
+    const el = sents[i];
+    if (el) guideEl.scrollTop = Math.max(0, el.offsetTop - guideEl.clientHeight/3);
+  }
+  // 일시정지 / 이어 듣기 (브라우저 pause()는 기기마다 불안정해, 읽던 문장부터 다시 읽는 방식)
+  function setPaused(v){
+    paused = v;
+    const pb = document.getElementById('pauseBtn');
+    pb.textContent = v ? '▶ 이어 듣기' : '⏸ 일시정지';
+    pb.setAttribute('aria-label', v ? '음성 이어 듣기' : '음성 일시정지');
+  }
+  function togglePause(){
+    if (tour) { toggleTourPause(); return; }
+    if (paused && canSpeak()) { const { msg, idx, done } = paused; speakTTS(msg, true, idx, done); return; }
+    if (isSpeaking() && curMsg) { const p0 = { msg: curMsg, idx: curIdx, done: curCompletion }; stopSpeech({ keepTour: true }); setPaused(p0); showGuide('음성을 잠시 멈췄습니다. 이어 듣기를 누르면 멈춘 문장부터 다시 읽습니다.'); }
+    else showGuide('지금 나오는 음성이 없습니다.');
+  }
+  // 자동 안내는 음성 안내 모드에서 읽고 직접 요청한 안내는 일반 모드에서도 읽는다.
+  function feedback(msg, { auto = true, interrupt = true, level = 'major' } = {}){
+    if (tour && auto) return;
+    if (auto && LEVEL_RANK[level] > VERB_RANK[verbosity]) return;   // 안내 빈도 설정에 따라 생략
+    lastSpoken = msg;
+    showGuide(msg);
+    const useTTS = canSpeak() && (!auto || mode === 'nonvisual');
+    if (useTTS) speakTTS(msg, interrupt); else liveSay(msg);
+  }
+  function stopSpeech({ keepTour = false } = {}){
+    if (!keepTour) cancelTour();
+    speechVersion++;
+    clearTimeout(liveTimer);
+    speechTimers.forEach(timer => clearTimeout(timer));
+    speechTimers.clear();
+    speakingCount = 0;
+    curMsg = '';
+    curCompletion = null;
+    if (paused) setPaused(null);
+    if (hasTTS) { try { speechSynthesis.cancel(); } catch (e) {} }
+  }
+  function stopNarration(){
+    stopSpeech();
+    const msg = '내장 음성을 멈췄습니다.';
+    showGuide(msg);
+    liveSay(msg);
+  }
+  function repeatLast(){ cancelTour(); feedback(lastSpoken || '아직 들려드린 안내가 없습니다. H 키로 조작법을 들을 수 있습니다.', { auto: false }); }
+
+  const INTRO = '손 안의 태양은 올라퍼 엘리아슨이 2003년 런던 테이트 모던에서 선보인 설치 작품, 날씨 프로젝트를 웹으로 재해석한 작품입니다. ' +
+    '당신은 길이 약 155미터, 아주 높고 긴 터빈 홀의 입구 쪽에 서 있습니다. 앞쪽으로 걸어갈수록 끝 벽에 가까워집니다. ' +
+    '끝 벽 높은 곳에는 커다란 둥근 태양이 떠 있습니다. 태양은 오직 한 가지 주황빛만 내기 때문에, 홀 안의 모든 것이 노란빛과 검은 그림자로만 보입니다. ' +
+    '홀의 천장 전체는 거울로 덮여 있습니다. 위를 올려다보면 바닥에 선 나와 다른 관람객이 아주 작게 비쳐 보입니다. 그래서 2003년의 관람객들은 바닥에 누워 거울 속 자신에게 손을 흔들었습니다. ' +
+    '홀에는 옅은 인공 안개가 떠다닙니다. 안개는 빛을 퍼뜨려 태양을 부드럽게 번지게 하고, 공간을 실제 날씨 속에 있는 것처럼 느끼게 합니다. ' +
+    '태양, 거울, 안개는 모두 날씨를 흉내 낸 장치입니다. 작가는 우리가 늘 당연하게 느끼는 날씨와 빛을 어떻게 경험하는지 묻습니다. ' +
+    '태양 바로 아래까지 걸어가면, 그리고 거울 뒤를 들여다보면, 무언가를 발견할 수 있습니다.';
+  const HELP = '조작법입니다. 위쪽 방향키는 태양 쪽으로, 아래쪽 방향키는 입구 쪽으로 한 걸음 걷습니다. 한 걸음은 약 9미터입니다. ' +
+    '왼쪽과 오른쪽 방향키는 홀의 왼쪽 벽과 오른쪽 벽 쪽으로 걷습니다. 걸음을 멈추면 태양까지의 거리와 위치를 알려 드리고, 벽에 닿으면 둔탁한 소리가 납니다. ' +
+    '스페이스 바를 누르고 있으면 숨을 불어 안개가 짙어집니다. B 키는 3초 동안 짧게 숨을 붑니다. ' +
+    'L 키는 바닥에 눕기와 일어서기입니다. A 키는 누운 모양을 일자, T자 팔 벌리기, Y자 만세, 큰 대자, C자 웅크리기 순서로 바꾸고, D 키는 누운 몸을 45도씩 돌립니다. 숫자 4는 관객의 상호작용, O 키는 태양 글자의 빈 자리로 걸어가기입니다. T 키는 거울 뒤 구조 보기, G 키는 태양 아래로 걸어가기입니다. ' +
+    'S 키는 지금 상태 듣기, R 키는 마지막 안내 다시 듣기, P 키는 감상 기록 듣기입니다. ' +
+    '숫자 1은 작품 전체 듣기, 2는 태양·거울·안개·관람객·홀을 하나씩 듣기, 3은 손끝 탐색 켜고 끄기, 마침표는 다음 탐색 지점입니다. 더하기와 빼기 키로 말 빠르기를 바꿉니다. ' +
+    '손끝 탐색에서는 위치를 먼저 확인하고 이곳으로 이동 버튼을 눌러 걷습니다. 처음부터 안내받기 버튼을 누르면 전체 소개, 태양과 거울 감상, 직접 탐색으로 이어집니다. 내장 음성을 쓰면 해설이 끝날 때 다음으로 넘어갑니다. 화면 읽기 사용 중에는 다음으로 버튼으로 진행하세요. 잠시 멈추기나 안내 감상 끝내기 버튼으로 조절할 수 있습니다. ' +
+    'W 키는 현재 위치 확인, X 키는 이동 멈추기, Home 키나 숫자 0은 시작 위치로 돌아가기, U 키나 백스페이스는 방금 한 이동이나 눕기를 되돌립니다. ' +
+    'Q 키는 전체 음소거, F 키는 자동 안내를 끄기, 주요 이벤트만, 상세 순서로 바꾸고, C 키는 이 기기에서 되는 기능과 대체 방법을 알려 줍니다. 소리 크기와 음성 속도는 화면 아래 설정에서 따로 조절할 수 있습니다. ' +
+    'V 키는 천장 거울의 원리, E 키는 거울 뒤 구조를 한 부분씩 탐색, K 키는 태양과 안개 소리의 의미, N 키는 주변 관람객의 수와 방향을 알려 줍니다. ' +
+    'I 키는 작품 소개, H 키는 이 조작법, M 키는 감상 모드 바꾸기, Escape 키는 음성 멈추기입니다. ' +
+    '스크린리더를 쓰는 경우 터빈 홀 탐색 공간에 포커스를 두면 이 단축키들이 바로 동작합니다. 키보드가 없는 휴대폰에서는 화면의 걷기 버튼 네 개로 한 걸음씩 걷고, 다른 기능은 제목별로 묶인 버튼에서 찾을 수 있습니다. 모든 기능은 화면 아래 버튼으로도 쓸 수 있습니다.';
+  document.getElementById('introText').textContent = INTRO;
+  document.getElementById('keyHelpText').textContent = HELP;
+  function playIntro(){ cancelTour(); feedback(INTRO + ' 다음 단계인 2 초점에서는 태양, 거울, 안개를 하나씩 들을 수 있습니다.', { auto: false }); }
+  function playHelp(){ feedback(HELP, { auto: false }); }
+
+  // 효과음 (비시각 모드에서만): 걸음·벽·태양·철골·눕기·구역 변화·숨
+  let fx = null, noise = null;
+  function fxCtx(){
+    try {
+      if (!fx) fx = new (window.AudioContext || window.webkitAudioContext)();
+      if (fx.state === 'suspended') fx.resume();
+      return fx;
+    } catch (e) { return null; }
+  }
+  function tone(freq, dur = 0.12, { type = 'sine', pan = 0, gain = 0.15, when = 0, slide = 0, force = false } = {}){
+    if (!isAssisted() && !force) return;
+    gain *= fxLevel(); if (gain < 0.0002) return;
+    if (!stereoOn) pan = 0;
+    sfxEndAt = Math.max(sfxEndAt, performance.now() + (when + dur)*1000);
+    const ac = fxCtx(); if (!ac) return;
+    const t = ac.currentTime + when;
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq*slide), t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(gain, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g);
+    let out = g;
+    if (ac.createStereoPanner) { const p = ac.createStereoPanner(); p.pan.value = clamp(pan, -1, 1); g.connect(p); out = p; }
+    out.connect(ac.destination);
+    o.start(t); o.stop(t + dur + 0.05);
+  }
+  const sfx = {
+    step: () => tone(260 + me.tz*520, 0.07, { type: 'triangle', pan: me.tx*0.9, gain: 0.12 }),
+    wall: pan => { tone(120, 0.18, { type: 'square', pan, gain: 0.07, slide: 0.55 }); tone(68, 0.25, { pan, gain: 0.2 }); },
+    sun: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.6, { when: i*0.13, gain: 0.09 })),
+    truss: () => { tone(1320, 0.7, { type: 'triangle', gain: 0.06 }); tone(1975, 0.55, { gain: 0.04, when: 0.03 }); tone(990, 0.8, { gain: 0.04, when: 0.06 }); },
+    lie: down => tone(down ? 440 : 300, 0.32, { slide: down ? 0.5 : 2, gain: 0.09 }),
+    zone: () => { tone(587, 0.14, { gain: 0.07 }); tone(880, 0.18, { gain: 0.06, when: 0.1 }); }
+  };
+  function whoosh(on){
+    if (on) {
+      if (!isAssisted() || noise || sensory.air) return;   // 바람이 켜져 있으면 바람 소리가 숨을 표현
+      const c = fxCtx(); if (!c) return;
+      try {
+        const buf = c.createBuffer(1, c.sampleRate, c.sampleRate), d = buf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = Math.random()*2 - 1;
+        const src = c.createBufferSource(); src.buffer = buf; src.loop = true;
+        const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 650; bp.Q.value = 0.7;
+        const g = c.createGain(); g.gain.value = 0;
+        src.connect(bp); bp.connect(g); g.connect(c.destination); src.start();
+        g.gain.setTargetAtTime(0.08*fxLevel(), c.currentTime, 0.15);
+        noise = { src, g, c };
+      } catch (e) {}
+    } else if (noise) {
+      const n = noise; noise = null;
+      n.g.gain.setTargetAtTime(0, n.c.currentTime, 0.2);
+      setTimeout(() => { try { n.src.stop(); } catch (e) {} }, 900);
+    }
+  }
+
+  // 태양과 거울 뒤편 해설
+  const TRUSS_TEXT = '거울 뒤 구조를 발견했습니다. 지금은 건물 5층에서 천장 거울의 뒤편을 내려다보고 있습니다. 아래에서 보던 거대한 거울 천장은 사실 얇은 알루미늄 거울판 여러 장을 강철 프레임 격자에 매달아 만든 것입니다. 하나의 하늘처럼 보이던 거울이 판과 철골이 맞물린 구조물이었음을 알 수 있습니다.';
+  const SUN_TEXT = '태양 바로 아래에 도착했습니다. 가까이서 보니 실제로 벽에 걸린 것은 반원 하나뿐입니다. 반원 안에는 수많은 노란 전구가 부채꼴 모양으로 촘촘히 박혀 있고, 위쪽 반원은 천장 거울에 비친 모습입니다. 진짜 반원과 거울 속 반원이 만나는 곳에 이음매가 보입니다. 멀리서 완전한 둥근 태양으로 보였던 것은 전구와 거울이 만든 환영이었습니다.';
+  const trussBtn = document.getElementById('trussBtn');
+  function onTrussFound(){ sfx.truss(); markJourney('truss'); feedback(TRUSS_TEXT, { level: 'state' }); }
+  let trussPart = -1;
+  const exploreBtn = document.getElementById('exploreBtn');
+  const TRUSS_PARTS = [
+    '거울판. 천장을 덮은 거울은 하나의 큰 판이 아니라 얇은 알루미늄 판 여러 장을 이어 붙인 것입니다. 홀 길이 방향으로 16칸, 폭 방향으로 2줄의 판이 나란히 놓여 있고, 지금 표시된 칸이 내 머리 바로 위의 판입니다. 판과 판 사이의 이음매 때문에 거울 속 풍경은 아주 미세하게 끊겨 보입니다.',
+    '강철 프레임. 판들은 격자 모양의 강철 프레임에 고정되어 있습니다. 홀의 왼쪽 가장자리, 한가운데, 오른쪽 가장자리를 따라 긴 보 세 줄이 입구부터 태양 쪽 끝까지 이어지고, 칸마다 가로 보가 이를 연결합니다.',
+    '대각선 보강재. 칸마다 지그재그로 놓인 대각선 부재가 넓은 프레임이 처지지 않도록 붙잡고 있습니다. 아래에서는 하나의 매끈한 하늘처럼 보이던 거울이, 위에서는 같은 모양이 반복되는 철골 구조라는 것을 알 수 있습니다.',
+    '태양 쪽 끝. 거울은 태양이 걸린 끝 벽까지 빈틈없이 이어집니다. 이 끝부분이 벽에 걸린 반원 램프를 비춰 나머지 절반을 만들고, 그래서 아래에서는 완전한 둥근 태양이 보입니다.'
+  ];
+  function setTruss(v, silent = false){
+    trussLocked = v;
+    trussBtn.setAttribute('aria-pressed', String(v));
+    trussBtn.textContent = v ? '거울 보기로 돌아가기' : '거울 뒤 구조 보기';
+    if (!v) { trussPart = -1; exploreBtn.textContent = '거울 뒤 구조 탐색 (4부분)'; }
+    if (silent) return;
+    if (v) onTrussFound(); else feedback('다시 거울 앞으로 돌아왔습니다. 거울에 홀 바닥과 관람객이 비칩니다.', { level: 'state' });
+  }
+  function toggleTruss(){ setTruss(!trussLocked); }
+  trussBtn.addEventListener('click', toggleTruss);
+  function exploreTruss(){
+    const first = !trussLocked;
+    if (first) { setTruss(true, true); markJourney('truss'); sfx.truss(); }
+    trussPart = (trussPart + 1) % TRUSS_PARTS.length;
+    tone(660 + trussPart*110, 0.12, { type: 'triangle', gain: 0.07 });
+    const last = trussPart === TRUSS_PARTS.length - 1;
+    exploreBtn.textContent = last ? '거울 뒤 구조 탐색: 처음부터' : `거울 뒤 구조 탐색: 다음 (${trussPart + 2}/4)`;
+    feedback((first ? '거울 뒤로 올라가 구조를 하나씩 살펴봅니다. ' : '') + `${trussPart + 1}/4. ${TRUSS_PARTS[trussPart]}` +
+      (last ? ' 구조 탐색을 모두 마쳤습니다. 다시 누르면 처음부터, T 키를 누르면 거울 앞으로 돌아갑니다.' : ' 다음 부분은 E 키입니다.'), { level: 'state' });
+  }
+  exploreBtn.addEventListener('click', exploreTruss);
+
+  // 천장 거울 원리: 내 위치·자세가 거울에 비치는 방식
+  function speakMirror(){
+    const people = buildPeople().filter(p => !p.me);
+    const lyingN = people.filter(p => p.lying).length;
+    const pct = Math.round(me.z*100);
+    const side = me.x < -0.33 ? '왼쪽 벽 가까이' : me.x > 0.33 ? '오른쪽 벽 가까이' : '한가운데';
+    const pose = me.lying
+      ? '지금 당신은 누워 있어서, 거울에는 머리부터 발끝까지 온몸이 길게 펼쳐져 보입니다. 그래서 2003년의 관람객들은 바닥에 누워 팔다리를 움직이고, 여럿이 몸으로 글자를 만들어 거울 속에서 읽었습니다.'
+      : '지금 당신은 서 있어서, 거울에는 머리 꼭대기와 어깨만 작은 점처럼 보입니다. 누우면 거울 속 모습이 길게 펼쳐집니다.';
+    feedback('천장 거울의 원리. 터빈 홀 천장 전체는 바닥과 나란한 거대한 거울입니다. 거울은 들어온 빛을 같은 각도로 되돌려 보내기 때문에, 위를 올려다보면 바닥 전체가 위에서 내려다본 모습으로 비칩니다. ' +
+      '거울이 약 35미터 높이에 있으므로, 거울 속 나는 그 두 배인 약 70미터 떨어진 곳에 거꾸로 서 있는 것처럼 아주 작게 보입니다. ' + pose + ' ' +
+      `거울 속 내 모습은 언제나 실제 위치 바로 위에 있습니다. 지금은 홀 ${side}, 입구에서 태양 쪽으로 ${pct}퍼센트 지점입니다. 화면 위쪽 거울 띠에서는 왼쪽이 입구, 오른쪽이 태양 쪽이고, 나는 고리 표시로 나타납니다. ` +
+      `걸을 때 남는 빛 자국도 거울에 비쳤다가 30초 뒤 사라집니다. 지금 거울에는 다른 관람객 ${people.length}명이 비치고, 그중 ${lyingN}명이 누워 있습니다. ` +
+      (!letterOn ? '숫자 4로 관객의 상호작용을 열면, 관람객들이 바닥에 누워 거울 속에 글자를 만듭니다. ' : slotWasFilled ? '거울 속에서는 당신을 포함한 열네 명의 몸이 태양 글자를 이루고 있습니다. ' : '홀 한가운데에 누운 열세 명은 거울 속에 태양 글자를 쓰고 있는데, 받침 ㅇ의 오른쪽 반이 비어 있습니다. ') +
+      '거울 뒤가 궁금하면 E 키로 구조를 탐색할 수 있습니다.', { auto: false });
+  }
+  document.getElementById('mirrorBtn').addEventListener('click', speakMirror);
+
+  // 태양과 안개: 소리 변화의 의미
+  const pitchWord = () => ['낮은', '중간 높이의', '높은'][zoneOf(me.z)];
+  function speakMeaning(){
+    const d = describe();
+    const muffled = fog > 0.45;
+    feedback('태양과 안개 소리의 의미. 낮게 깔린 배경음은 태양의 빛을 소리로 옮긴 것입니다. ' +
+      (soundOn ? '' : '지금은 소리 감상이 꺼져 있어, 켜면 아래 변화를 직접 들을 수 있습니다. ') +
+      `지금 배경음은 ${pitchWord()} 음입니다. 태양까지 약 ${d.dist}미터이기 때문입니다. 태양에 가까워질수록 음이 높고 커지는데, 실제 홀에서 태양에 다가갈수록 빛이 강해지고 눈부셔지는 것을 뜻합니다. ` +
+      `소리가 ${me.x < -0.33 ? '왼쪽 귀에 치우친 것은 홀의 왼쪽 벽 가까이' : me.x > 0.33 ? '오른쪽 귀에 치우친 것은 홀의 오른쪽 벽 가까이' : '양쪽 귀에 고르게 들리는 것은 홀 한가운데'}에 있다는 뜻입니다. ` +
+      `지금 소리의 질감은 ${muffled ? '먹먹합니다' : '맑습니다'}. 안개가 ${fog > 0.7 ? '아주 짙기' : fog > 0.45 ? '짙기' : '옅기'} 때문입니다. 안개가 짙어지면 높은 소리가 깎여 먹먹해지는데, 짙은 안개가 빛을 사방으로 흩어 태양의 윤곽을 흐리게 만들고 홀 전체를 뿌연 빛으로 채우는 것을 소리로 표현한 것입니다. 숨을 불어 직접 바꿔 볼 수 있습니다. ` +
+      (me.lying ? '누워 있을 때 위쪽 울림이 낮아지는 것은 시선이 태양에서 천장 거울로 옮겨 갔다는 뜻입니다.' : '누우면 위쪽 울림이 한 단계 낮아집니다. 시선이 태양에서 거울로 옮겨 간다는 뜻입니다.'), { auto: false });
+  }
+  document.getElementById('meaningBtn').addEventListener('click', speakMeaning);
+  function goToSun(){
+    if (me.z > 0.92 && Math.abs(me.x) < 0.6) { feedback('이미 태양 바로 아래에 있습니다.', { level: 'state' }); return; }
+    pushHistory('태양 아래로 걷기');
+    dest = null;
+    setTarget(0, 0.96);
+    const secs = Math.round(Math.hypot(me.x, 0.96 - me.z)/0.32);
+    feedback(`태양까지 약 ${secs}초를 걷습니다. X 키로 멈출 수 있습니다.`, { level: 'state' });
+  }
+  document.getElementById('sunBtn').addEventListener('click', goToSun);
+  document.getElementById('introBtn').addEventListener('click', playIntro);
+  document.getElementById('helpBtn').addEventListener('click', playHelp);
+  document.getElementById('repeatBtn').addEventListener('click', repeatLast);
+
+  const ttsBtn = document.getElementById('ttsBtn');
+  function syncTtsButton(){
+    const enabled = ttsEnabled();
+    if (enabled) ttsFailed = false;
+    else stopSpeech();
+    ttsBtn.setAttribute('aria-pressed', String(enabled));
+    ttsBtn.textContent = !hasTTS ? '내장 음성 미지원' : enabled ? '내장 음성 켜짐' : '내장 음성 꺼짐';
+  }
+  ttsBtn.addEventListener('click', () => {
+    if (isAssisted()) {
+      applyMode(mode === 'reader' ? 'nonvisual' : 'reader');
+    } else {
+      visualTtsOn = !visualTtsOn;
+      syncTtsButton();
+    }
+    const msg = mode === 'reader' ? '화면 읽기 모드로 바꿨습니다.'
+      : ttsEnabled() ? '내장 음성 안내를 켰습니다.' : '내장 음성을 껐습니다.';
+    feedback(msg, { auto: false });
+  });
+
+  // 감상 기록과 감상 완료
+  const journey = { sun: false, lie: false, breath: false, truss: false, letter: false };
+  const journeyNames = { sun: '태양 아래까지 걷기', lie: '바닥에 누워 거울 보기', breath: '숨으로 안개 만들기', truss: '거울 뒤 구조 발견하기', letter: '몸으로 태양 글자 완성하기' };
+  const JOURNEY_TOTAL = Object.keys(journey).length;
+  const journeyBtn = document.getElementById('journeyBtn');
+  let journeyDone = false;
+  function journeyCount(){ return Object.values(journey).filter(Boolean).length; }
+  function markJourney(k){
+    if (journey[k]) return;
+    journey[k] = true;
+    journeyBtn.textContent = `감상 기록 ${journeyCount()}/${JOURNEY_TOTAL}`;
+    if (!journeyDone && journeyCount() === JOURNEY_TOTAL) {
+      journeyDone = true;
+      setTimeout(() => feedback('다섯 가지 감상 활동을 모두 마쳤습니다. 홀에 더 머물거나, I 키로 작품 소개를 다시 들을 수 있습니다.', { interrupt: false }), 400);
+    }
+  }
+  function speakJourney(){
+    const done = Object.keys(journey).filter(k => journey[k]).map(k => journeyNames[k]);
+    const left = Object.keys(journey).filter(k => !journey[k]).map(k => journeyNames[k]);
+    const msg = `감상 기록 ${JOURNEY_TOTAL}개 중 ${done.length}개. ` + (done.length ? `경험한 것: ${done.join(', ')}. ` : '아직 경험한 것이 없습니다. ') + (left.length ? `남은 것: ${left.join(', ')}.` : '모든 경험을 마쳤습니다.');
+    feedback(msg, { auto: false });
+  }
+  journeyBtn.addEventListener('click', speakJourney);
+
+  // 감상 단계 4: 관객의 상호작용 — 누운 몸으로 거울 속 '태양' 글자 완성하기
+  const interactBtn = document.getElementById('interactBtn'), interactPanel = document.getElementById('interactPanel');
+  const interactStatus = document.getElementById('interactStatus');
+  const INTERACT_TEXT = '관객의 상호작용. 2003년 관람객들은 처음 만난 사람들과 바닥에 함께 누워 몸으로 글자와 모양을 만들고, 천장 거울로 올려다보며 읽었습니다. ' +
+    '지금 홀 한가운데에서는 관람객 열세 명이 누워 거울 속에 태양이라는 글자를 쓰고 있습니다. 그런데 받침 ㅇ의 오른쪽 반쪽, 한 사람 자리가 비어 있습니다. ' +
+    '빈 자리로 걸어가 바닥에 누운 뒤 C자로 웅크리고, 둥근 등이 태양 쪽을 향하게 몸을 돌리면 글자가 완성됩니다.';
+  const LETTER_TEXT = '거울 속 글자. 천장 거울로 홀 한가운데를 보면 누운 사람들의 몸이 태양 두 글자를 이룹니다. ' +
+    'ㅌ은 네 사람이 세로 하나와 가로 셋으로 눕고, ㅐ는 세 사람이 세로 둘과 그 사이 가로 하나로 눕습니다. ' +
+    '양의 첫 ㅇ은 두 사람이 C자로 마주 웅크려 동그라미를 만들고, ㅑ는 세 사람이 세로 하나와 짧은 가로 둘로 눕습니다. ' +
+    '아래 받침 ㅇ은 왼쪽 반원만 한 사람이 C자로 만들었고, 오른쪽 반원이 비어 있습니다. 거울에는 이 빈 자리가 붉은 점선으로 보입니다.';
+  const LETTER_DONE_TEXT = '태양 글자가 완성되었습니다! C자로 웅크린 당신의 몸이 받침 ㅇ의 비어 있던 오른쪽 반원을 채웠습니다. ' +
+    '천장 거울 속에서 열세 명의 관람객과 당신이 함께 태양이라는 글자를 이룹니다. 2003년의 관람객들도 이렇게 처음 만난 사람들과 바닥에 누워 거울 속에 글자를 썼습니다. 일어서면 자리가 다시 비워집니다.';
+  const slotMeters = () => Math.round(Math.hypot((me.x - SLOT.x)*M_PER_X, (me.z - SLOT.z)*HALL_LEN));
+  function slotWhere(){
+    if (slotWasFilled) return '지금은 당신이 빈 자리를 채워 글자가 완성되어 있습니다.';
+    if (atSlot()) return '지금 빈 자리 바로 위에 있습니다.' + slotHint();
+    return `빈 자리는 나의 ${relDir(SLOT)} 약 ${slotMeters()}미터에 있습니다. O 키나 ‘빈 자리로 걸어가기’로 바로 갈 수 있습니다.`;
+  }
+  function setInteractOpen(v){ interactPanel.hidden = !v; interactBtn.setAttribute('aria-expanded', String(v)); setLetterOn(v); if (v) updateInteractStatus(); }
+  interactBtn.addEventListener('click', () => {
+    const open = interactPanel.hidden;
+    setInteractOpen(open);
+    feedback(open ? INTERACT_TEXT + ' ' + slotWhere() : '관객의 상호작용을 닫았습니다. 글자를 만들던 관람객들이 일어나 흩어졌습니다.', { auto: false });
+  });
+  function openInteract(){
+    cancelTour();
+    if (mode === 'visual') openPanel('pGuide');
+    setInteractOpen(true);
+    feedback(INTERACT_TEXT + ' ' + slotWhere(), { auto: false });
+  }
+  function describeLetter(){ feedback(LETTER_TEXT + ' ' + slotWhere(), { auto: false }); }
+  function goToSlot(){
+    if (!letterOn) setInteractOpen(true);
+    if (atSlot() && !isWalking()) {
+      feedback(slotFilledNow() ? '이미 빈 자리를 채워 태양 글자를 완성했습니다.' : '이미 글자의 빈 자리에 있습니다.' + slotHint(), { level: 'state' });
+      return;
+    }
+    pushHistory('빈 자리로 걷기');
+    pendingArrive = false;
+    setTarget(SLOT.x, SLOT.z);
+    dest = { name: '글자의 빈 자리' };
+    const secs = Math.max(1, Math.round(Math.hypot(me.x - SLOT.x, me.z - SLOT.z)/0.32));
+    feedback(`태양 글자의 빈 자리로 약 ${secs}초 걷습니다. 도착하면 C자로 웅크려 누워 보세요. X 키로 멈출 수 있습니다.`, { level: 'state' });
+  }
+  function checkSlot(){
+    const msg = slotWasFilled ? '맞습니다. 빈 자리를 C자로 채워 태양 글자가 완성되어 있습니다.'
+      : nearSlot() ? (me.lying ? `지금 ${poseWords()}입니다.` : '지금 서 있습니다.') + slotHint()
+      : slotWhere();
+    feedback(msg, { auto: false });
+  }
+  function updateInteractStatus(){
+    const t = slotWasFilled ? '완성! 거울 속 태양 글자가 이어졌습니다. 일어서면 다시 비워집니다.'
+      : `빈 자리까지 약 ${slotMeters()}미터 · ${me.lying ? poseWords() : '서 있음'}`;
+    if (interactStatus.textContent !== t) interactStatus.textContent = t;
+  }
+  document.getElementById('letterListen').addEventListener('click', describeLetter);
+  document.getElementById('slotGoBtn').addEventListener('click', goToSlot);
+  document.getElementById('slotCheckBtn').addEventListener('click', checkSlot);
+
+  // 감상 모드
+  const modeDialog = document.getElementById('modeDialog');
+  const modeBtn = document.getElementById('modeBtn');
+  const modeNames = { visual: '일반', nonvisual: '음성 안내', reader: '화면 읽기' };
+  const nextModes = { visual: 'nonvisual', nonvisual: 'reader', reader: 'visual' };
+  function applyMode(nextMode){
+    const layoutChanged = (mode === 'visual') !== (nextMode === 'visual');
+    mode = nextMode;
+    document.body.dataset.mode = mode;
+    if (layoutChanged) applyLayout();
+    syncTtsButton();
+    modeBtn.textContent = `감상 모드 · ${modeNames[mode]}`;
+    const nextName = modeNames[nextModes[mode]];
+    modeBtn.setAttribute('aria-label', `${modeNames[mode]} 감상 중. ${nextName} 모드로 전환`);
+  }
+  function setMode(nextMode, welcome = false){
+    stopSpeech();
+    applyMode(nextMode);
+    if (!isAssisted()) {
+      setExploring(false, true);
+      whoosh(false);
+      feedback(`일반 감상 모드입니다. ${ttsBtn.textContent}.`, { level: 'state' });
+      hall.focus();
+      return;
+    }
+    fxCtx();
+    if (!soundOn && hasAudio) setSound(true, false);
+    lastZone = zoneOf(me.z);
+    setExploring(true, true);
+    const focusWalkTools = mode === 'reader' || matchMedia('(pointer: coarse)').matches;
+    const focusTarget = focusWalkTools ? document.getElementById('walkTitle') : hall;
+    focusTarget.focus();
+    const guide = mode === 'reader'
+      ? '화면 읽기 모드입니다. 제목별로 감상 도구를 찾을 수 있습니다. 손끝 탐색의 지점 버튼으로 위치를 확인하고 ‘이곳으로 이동’을 누르면 걷습니다. ‘처음부터 안내받기’를 선택하면 순서대로 감상할 수 있고, 해설을 읽은 뒤 ‘다음으로’를 누르면 이어집니다.'
+      : '음성 안내 모드입니다. 화면을 짚으면 먼저 위치를 소리로 확인합니다. 고른 위치로 가려면 ‘이곳으로 이동’을 누르세요. 방향키나 걷기 버튼으로도 이동할 수 있습니다. 순서대로 둘러보려면 ‘처음부터 안내받기’를 누르세요.';
+    feedback([guide, deviceGaps(), welcome && mode === 'nonvisual' ? INTRO : ''].filter(Boolean).join(' '), { level: 'state' });
+  }
+  function toggleMode(){ setMode(nextModes[mode]); }
+  modeBtn.addEventListener('click', toggleMode);
+
+  // 기능 묶음 펼치기: 한 번에 하나만 열림 (disclosure 패턴)
+  const menuBtns = [...document.querySelectorAll('.menu [aria-controls]')];
+  function openPanel(id){
+    menuBtns.forEach(b => {
+      const on = b.getAttribute('aria-controls') === id;
+      b.setAttribute('aria-expanded', String(on));
+      document.getElementById(b.getAttribute('aria-controls')).hidden = !on;
+    });
+  }
+  menuBtns.forEach(b => b.addEventListener('click', () => {
+    openPanel(b.getAttribute('aria-expanded') === 'true' ? null : b.getAttribute('aria-controls'));
+  }));
+  // 걷기 버튼 (화면 터치·스크린리더 두 번 탭)
+  [['stepUp', 0, STEP], ['stepDown', 0, -STEP], ['stepLeft', -STEP, 0], ['stepRight', STEP, 0]]
+    .forEach(([id, dx, dz]) => document.getElementById(id).addEventListener('click', () => keyMove(dx, dz)));
+  // 비시각 모드: 접힌 메뉴 대신 모든 묶음을 제목과 함께 펼쳐 둠 (스크린리더 '제목 이동'으로 바로 찾기)
+  const dpadWrap = document.getElementById('dpadWrap'), menuNav = document.querySelector('.menu');
+  let lastOpenPanel = null;
+  function applyLayout(){
+    const assisted = isAssisted();
+    dpadWrap.hidden = !assisted;
+    menuNav.hidden = assisted;
+    if (assisted) {
+      lastOpenPanel = menuBtns.find(b => b.getAttribute('aria-expanded') === 'true')?.getAttribute('aria-controls') ?? null;
+      menuBtns.forEach(b => { document.getElementById(b.getAttribute('aria-controls')).hidden = false; });
+    } else openPanel(lastOpenPanel);
+  }
+  document.getElementById('skipLink').addEventListener('click', e => {
+    if (dpadWrap.hidden) { e.preventDefault(); const t = document.getElementById('breath'); t.focus(); }
+    else { e.preventDefault(); document.getElementById('walkTitle').focus(); }
+  });
+  // 단축키 창
+  const keysDialog = document.getElementById('keysDialog');
+  function openKeys(){ try { keysDialog.showModal(); } catch (e) { keysDialog.setAttribute('open', ''); } }
+  document.getElementById('keysBtn').addEventListener('click', openKeys);
+  document.getElementById('keysClose').addEventListener('click', () => { try { keysDialog.close(); } catch (e) { keysDialog.removeAttribute('open'); } });
+  const welcomeSpeak = document.getElementById('welcomeSpeak');
+  const welcomeStop = document.getElementById('welcomeStop');
+  const welcomeStatus = document.getElementById('welcomeStatus');
+  const WELCOME = '손 안의 태양에 오신 것을 환영합니다. 태양을 향해 걷고, 숨으로 안개를 만들고, 누워서 천장 거울을 감상하는 작품입니다. ' +
+    '세 감상 방식은 모두 같은 작품을 보여 줍니다. 첫 번째, 화면 보며 감상은 화면에서 태양과 거울을 보고, 바닥을 누르거나 방향키로 직접 이동하는 방식입니다. 소리나 원하는 설명도 켜서 들을 수 있습니다. ' +
+    '두 번째, 음성 안내로 감상은 작품의 목소리와 효과음으로 거리와 변화를 안내받는 방식입니다. 지점을 먼저 확인하고 이곳으로 이동을 눌러 걸으며, 방향키나 걷기 버튼으로도 움직일 수 있습니다. 별도의 화면 읽기 프로그램은 필요하지 않습니다. ' +
+    '세 번째, 화면 읽기 사용은 버튼 이름과 글을 읽어 주는 프로그램으로 조작하는 방식입니다. VoiceOver, TalkBack, NVDA를 기기에서 먼저 켠 뒤 선택하세요. 사용 중인 프로그램이 버튼과 작품 안내를 읽고, 두 목소리가 겹치지 않게 작품의 내장 음성은 꺼집니다. 이 선택이 화면 읽기 프로그램 자체를 켜 주지는 않습니다. ' +
+    '키보드에서는 탭 키로 버튼을 찾고 엔터 키로 선택할 수 있습니다. 숫자 1, 2, 3으로도 감상 방식을 고를 수 있습니다. ' +
+    '이 안내를 멈추려면 안내 음성 끄기 버튼이나 이스케이프 키를 누르세요. 다시 들으려면 시작 안내 듣기 버튼이나 H 키를 누르세요.';
+  let welcomePlaying = false;
+  function resetWelcomeControls(){
+    welcomePlaying = false;
+    welcomeSpeak.textContent = '시작 안내 듣기';
+    welcomeStop.disabled = true;
+  }
+  function stopWelcome(){
+    stopSpeech();
+    resetWelcomeControls();
+    welcomeStatus.textContent = '시작 안내를 멈췄습니다. 다시 듣거나 감상 방식을 선택하세요.';
+    if (document.activeElement === welcomeStop) welcomeSpeak.focus();
+  }
+  function playWelcome(){
+    if (!hasTTS) return;
+    if (muted || voiceVol <= 0) {
+      welcomeStatus.textContent = '현재 음소거 또는 음성 크기 0으로 설정되어 있습니다. 아래 글로 안내를 확인하거나 감상 화면의 설정에서 음성을 켜 주세요.';
+      return;
+    }
+    stopSpeech();
+    resetWelcomeControls();
+    const version = speechVersion;
+    const finish = msg => {
+      if (version !== speechVersion) return;
+      speakingCount = 0;
+      resetWelcomeControls();
+      welcomeStatus.textContent = msg;
+      if (document.activeElement === welcomeStop) welcomeSpeak.focus();
+    };
+    try {
+      const u = new SpeechSynthesisUtterance(WELCOME);
+      u.lang = 'ko-KR'; u.rate = voiceRate; u.volume = voiceVol;
+      if (koVoice) u.voice = koVoice;
+      u.onstart = () => { if (version === speechVersion) speakingCount = 1; };
+      u.onend = () => finish('시작 안내를 마쳤습니다. 감상 방식을 선택하세요.');
+      u.onerror = () => finish('음성을 재생하지 못했습니다. 시작 안내 듣기를 다시 누르거나 아래 글로 감상 방식을 확인해 주세요.');
+      welcomePlaying = true;
+      welcomeSpeak.textContent = '시작 안내 다시 듣기';
+      welcomeStop.disabled = false;
+      welcomeStatus.textContent = '시작 안내 재생 중 · 안내 음성 끄기 또는 Esc 키로 멈출 수 있습니다.';
+      speechSynthesis.speak(u);
+    } catch (e) { finish('이 브라우저에서는 시작 안내 음성을 재생하지 못했습니다. 아래 글로 감상 방식을 확인해 주세요.'); }
+  }
+  welcomeSpeak.disabled = !hasTTS;
+  welcomeSpeak.addEventListener('click', playWelcome);
+  welcomeStop.addEventListener('click', stopWelcome);
+  let modeChosen = false;
+  function openModeDialog(){
+    stopSpeech();
+    resetWelcomeControls();
+    welcomeStatus.textContent = hasTTS
+      ? '시작 안내는 버튼을 눌러 재생합니다. 안내 도중에도 감상 방식을 선택할 수 있습니다.'
+      : '이 브라우저는 내장 음성을 지원하지 않습니다. 아래 안내 글이나 화면 읽기 프로그램으로 감상 방식을 확인하세요.';
+    try { modeDialog.showModal(); } catch (e) { modeDialog.setAttribute('open', ''); }
+    document.getElementById('modeTitle').focus();
+  }
+  function closeModeDialog(){
+    stopWelcome();
+    try { modeDialog.close(); } catch (e) { modeDialog.removeAttribute('open'); }
+  }
+  function chooseMode(nextMode){
+    modeChosen = true;
+    closeModeDialog();
+    setMode(nextMode, true);
+  }
+  document.getElementById('modeVisual').addEventListener('click', () => chooseMode('visual'));
+  document.getElementById('modeNonvisual').addEventListener('click', () => chooseMode('nonvisual'));
+  document.getElementById('modeReader').addEventListener('click', () => chooseMode('reader'));
+  modeDialog.addEventListener('keydown', e => {
+    if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+    if (e.key === 'Escape' && welcomePlaying) {
+      e.preventDefault(); e.stopPropagation(); stopWelcome();
+      return;
+    }
+    const selectedMode = { '1': 'visual', '2': 'nonvisual', '3': 'reader' }[e.key];
+    if (selectedMode) { e.preventDefault(); e.stopPropagation(); chooseMode(selectedMode); }
+    else if (e.key.toLowerCase() === 'h' || e.key === 'ㅗ') { e.preventDefault(); e.stopPropagation(); playWelcome(); }
+  });
+  modeDialog.addEventListener('cancel', e => {
+    e.preventDefault();
+    if (modeChosen) closeModeDialog();
+    else chooseMode('visual');
+  });
+  document.getElementById('startBtn').addEventListener('click', openModeDialog);
+
+  // 감상 단계: 초점
+  const focusBtn = document.getElementById('focusBtn'), focusList = document.getElementById('focusList');
+  const FOCUS = [
+    ['focusSun', () => `태양. 홀 끝 벽 높은 곳에 떠 있는 둥근 빛이 이 작품의 중심입니다. 오직 한 가지 주황빛만 내는 램프라서, 홀 안의 다른 색은 모두 사라지고 노랑과 검정만 남습니다. 지금 태양까지 약 ${describe().dist}미터입니다. 가까이 갈수록 배경음이 높아집니다. ${journey.sun ? '이미 태양 아래에서 그 정체를 확인했습니다.' : '태양 바로 아래까지 가면 무언가를 발견할 수 있습니다.'}`],
+    ['focusMirror', null],
+    ['focusFog', () => `안개. 홀에는 옅은 인공 안개가 떠다닙니다. 안개는 빛을 사방으로 흩어 태양을 부드럽게 번지게 하고, 공간을 실제 날씨 속에 있는 것처럼 느끼게 합니다. 지금 안개는 ${fog > 0.7 ? '아주 짙습니다' : fog > 0.45 ? '짙습니다' : '옅습니다'}. 숨 불어넣기 단추나 스페이스 키로 안개를 짙게 만들 수 있고, 짙어지면 배경음이 먹먹해집니다.`],
+    ['focusPeople', () => '관람객. ' + nearbySummary() + ' 관람객들은 홀을 거닐거나 바닥에 누워 천장 거울 속 자신을 올려다봅니다.' + (!letterOn ? ' 4 관객의 상호작용을 열면 관람객들이 함께 누워 거울 속에 글자를 만듭니다.' : ' 홀 한가운데에는 열세 명이 누워 거울 속에 태양 글자를 만들고 있고, ' + (slotWasFilled ? '당신이 마지막 자리를 채웠습니다.' : '한 사람 자리가 비어 있습니다.'))],
+    ['focusHall', () => `홀 공간. 터빈 홀은 길이 약 155미터, 폭 약 23미터, 높이 약 35미터의 거대한 직사각형 공간입니다. 입구에서 끝 벽까지 실제로 걸으면 2분쯤 걸립니다. 지금 나는 ${positionShort()}`]
+  ];
+  let focusIdx = -1;
+  function speakFocus(i){
+    cancelTour();
+    focusIdx = i;
+    const [id, fn] = FOCUS[i];
+    if (id === 'focusMirror') speakMirror();
+    else feedback(fn(), { auto: false });
+  }
+  FOCUS.forEach(([id], i) => document.getElementById(id).addEventListener('click', () => speakFocus(i)));
+  function setFocusOpen(v){ focusList.hidden = !v; focusBtn.setAttribute('aria-expanded', String(v)); }
+  focusBtn.addEventListener('click', () => {
+    const open = focusList.hidden;
+    setFocusOpen(open);
+    if (open) feedback('관심 있는 대상을 골라 자세히 살펴보세요. 태양, 천장 거울, 안개, 관람객, 홀 공간 중 하나를 누르면 설명을 들을 수 있습니다. 키보드에서는 숫자 2를 누를 때마다 다음 대상의 설명을 들을 수 있습니다.', { auto: false });
+  });
+  function nextFocus(){ setFocusOpen(true); speakFocus((focusIdx + 1) % FOCUS.length); }
+
+  // 감상 단계: 손끝 탐색
+  let exploring = false, curSpot = null, spotIdx = -1, probe = null, lastTick = 0;
+  const exploreBtn3 = document.getElementById('exploreModeBtn'), explorePanel = document.getElementById('explorePanel');
+  function hotspots(){
+    const out = [];
+    const [scx, scy, s1] = proj(0, 1, 1); const R = 0.336*s1;
+    out.push({ key: 'sun', name: '태양', x: scx, y: scy, r: R*1.4 });
+    out.push({ key: 'mirror', name: '천장 거울', x: HW*0.3, y: HH*0.07, r: HH*0.07 });   // 화면 위쪽 천장 띠
+    const lw = proj(-1, 0.45, 0.35); out.push({ key: 'left', name: '왼쪽 벽', x: lw[0], y: lw[1], r: HH*0.12 });
+    const rw = proj(1, 0.45, 0.35); out.push({ key: 'right', name: '오른쪽 벽', x: rw[0], y: rw[1], r: HH*0.12 });
+    const fl = proj(0, 0, 0.12); out.push({ key: 'floor', name: '바닥', x: fl[0], y: Math.min(HH*0.92, fl[1]), r: HH*0.1 });
+    const sl = proj(SLOT.x, 0, SLOT.z); if (letterOn) out.push({ key: 'slot', name: '글자의 빈 자리', x: sl[0], y: sl[1], r: Math.max(16, HH*0.045) });
+    const [mx, my, ms] = proj(me.x, 0, me.z); const mh = 0.07*ms*0.9;
+    out.push({ key: 'me', name: '나', x: mx, y: my - mh*0.5, r: Math.max(16, mh*0.7) });
+    npcs.forEach((n, i) => { const [px, py, ps] = proj(n.x, 0, n.z); const h = 0.07*ps*0.9; out.push({ key: 'n' + i, name: '관람객', person: n, x: px, y: py - h*0.4, r: Math.max(13, h*0.6) }); });
+    return out;
+  }
+  function spotText(sp){
+    const d = describe();
+    switch (sp.key) {
+      case 'sun': return `태양. 홀 끝 벽 높은 곳에 떠 있는 커다란 둥근 빛입니다. 가장자리는 노란빛으로 번져 있고, 지금은 안개가 ${fog > 0.7 ? '아주 짙어' : fog > 0.45 ? '짙어' : '옅어'} 윤곽이 ${fog > 0.45 ? '흐릿합니다' : '또렷합니다'}. 태양까지 약 ${d.dist}미터입니다.`;
+      case 'mirror': return '천장 거울. 홀 천장 전체를 덮은 거울입니다. 바닥에 선 사람들이 위에서 내려다본 모습으로 작게 비치고, 태양의 빛도 거울에 반사되어 홀 전체가 더 밝아 보입니다.';
+      case 'left': return `왼쪽 벽. 높고 어두운 벽이 입구에서 태양 쪽 끝까지 길게 이어집니다. 나는 왼쪽 벽에서 약 ${Math.round((me.x + 1)*11.5)}미터 떨어져 있습니다.`;
+      case 'right': return `오른쪽 벽. 높고 어두운 벽이 입구에서 태양 쪽 끝까지 길게 이어집니다. 나는 오른쪽 벽에서 약 ${Math.round((1 - me.x)*11.5)}미터 떨어져 있습니다.`;
+      case 'floor': return '바닥. 넓은 바닥에 노란빛이 고르게 깔려 있고, 사람들의 그림자가 길게 드리웁니다. 걸어간 자리에는 빛 자국이 남았다가 30초 뒤 사라집니다.';
+      case 'slot': return slotWasFilled ? '글자의 빈 자리. 당신이 C자로 웅크려 채워, 거울 속 태양 글자가 완성되어 있습니다.'
+        : `글자의 빈 자리. 누운 관람객들이 거울 속에 만든 태양 글자에서 받침 ㅇ의 오른쪽 반이 비어 있는 곳입니다. 나의 ${relDir(SLOT)} 약 ${slotMeters()}미터입니다. 이곳에 C자로 웅크려 누우면 글자가 완성됩니다.`;
+      case 'me': return `나. 바닥에 고리 표시가 있는 사람이 나입니다. ${positionShort()} ${me.lying ? '누워 있습니다.' : '서 있습니다.'}`;
+      default: { const p = sp.person; return `관람객. 나의 ${relDir(p)} 약 ${meters(p)}미터에 ${p.lying ? '누워' : '서'} 있습니다.`; }
+    }
+  }
+  const previewStatus = document.getElementById('previewStatus');
+  const previewMove = document.getElementById('previewMove');
+  let preview = null;
+  function setPreview(target){
+    preview = target;
+    previewMove.disabled = !target;
+    const text = target
+      ? `${target.name}. 태양까지 약 ${Math.round((1-target.z)*HALL_LEN)}미터인 위치입니다. ‘이곳으로 이동’을 눌러 이동하세요.`
+      : '이동할 위치를 먼저 소리로 확인하세요.';
+    if (previewStatus.textContent !== text) previewStatus.textContent = text;
+  }
+  function spotDestination(sp){
+    switch (sp.key) {
+      case 'sun': return { x: 0, z: 0.96, name: '태양 아래' };
+      case 'mirror': return { x: me.x, z: me.z, name: '현재 자리에서 거울 보기', lie: true };
+      case 'left': return { x: -0.97, z: me.z, name: '왼쪽 벽' };
+      case 'right': return { x: 0.97, z: me.z, name: '오른쪽 벽' };
+      case 'floor': return { x: 0, z: 0.12, name: '입구 쪽 바닥' };
+      case 'slot': return { x: SLOT.x, z: SLOT.z, name: '글자의 빈 자리' };
+      case 'me': return { x: me.x, z: me.z, name: '현재 위치' };
+      default: return { x: sp.person.x, z: sp.person.z, name: '관람객이 있던 자리' };
+    }
+  }
+  previewMove.addEventListener('click', () => {
+    if (!preview) return;
+    const target = { ...preview };
+    cancelTour();
+    pushHistory('탐색한 위치로 이동');
+    setExploring(false, true);
+    pendingArrive = false;
+    setTarget(target.x, target.z);
+    dest = { name: target.name };
+    lieOnArrive = !!target.lie;
+    feedback(`${target.name}로 이동합니다. X 키로 멈출 수 있습니다.`, { auto: false });
+    hall.focus();
+  });
+  function speakSpot(sp){
+    curSpot = sp;
+    setPreview(spotDestination(sp));
+    tone(988, 0.12, { force: true, gain: 0.08 }); tone(1319, 0.2, { force: true, gain: 0.06, when: 0.08 });
+    if (canVibrate) buzz([25, 40, 25]);
+    feedback(spotText(sp), { auto: false });
+  }
+  function ensureProbe(){
+    const c = fxCtx(); if (!c || probe) return;
+    try {
+      const o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; g.gain.value = 0;
+      const pan = c.createStereoPanner ? c.createStereoPanner() : null;
+      o.connect(g); if (pan) { g.connect(pan); pan.connect(c.destination); } else g.connect(c.destination);
+      o.start(); probe = { c, o, g, pan };
+    } catch (e) {}
+  }
+  function exploreAt(sx, sy){
+    ensureProbe();
+    const spots = hotspots();
+    let best = null, bestD = 1e9;
+    for (const sp of spots) { const d = Math.hypot(sx - sp.x, sy - sp.y) - sp.r; if (d < bestD) { bestD = d; best = sp; } }
+    if (bestD <= 0) setPreview(spotDestination(best));
+    else {
+      curSpot = null;
+      const floor = unproj(sx, sy);
+      setPreview(floor ? { x: floor[0], z: floor[1], name: '고른 바닥 위치' } : null);
+    }
+    const prox = bestD <= 0 ? 1 : clamp(1 - bestD/(HH*0.3), 0, 1);
+    if (probe) {
+      const t = probe.c.currentTime;
+      probe.o.frequency.setTargetAtTime(200 + (1 - clamp(sy/HH, 0, 1))*700, t, 0.03);
+      probe.g.gain.setTargetAtTime((0.025 + 0.08*prox)*fxLevel(), t, 0.05);
+      if (probe.pan) probe.pan.pan.setTargetAtTime(stereoOn ? clamp(sx/HW*2 - 1, -1, 1) : 0, t, 0.05);
+    }
+    const now = performance.now();
+    if (prox > 0.05 && now - lastTick > 420 - prox*340) {
+      lastTick = now;
+      if (canVibrate) buzz(8); else tone(1800, 0.025, { force: true, gain: 0.05, pan: stereoOn ? clamp(sx/HW*2 - 1, -1, 1) : 0 });
+    }
+    if (bestD <= 0) { if (!curSpot || curSpot.key !== best.key) speakSpot(best); }
+  }
+  function exploreEnd(){ if (probe) probe.g.gain.setTargetAtTime(0, probe.c.currentTime, 0.08); }
+  function buildSpotButtons(){
+    const box = document.getElementById('spotBtns'); box.innerHTML = '';
+    hotspots().filter(sp => !sp.person).forEach(sp => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'ghost'; b.textContent = sp.name;
+      b.addEventListener('click', () => { const fresh = hotspots().find(x => x.key === sp.key); spotIdx = hotspots().findIndex(x => x.key === sp.key); if (fresh) speakSpot(fresh); });
+      box.append(b);
+    });
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'ghost'; b.textContent = '가장 가까운 관람객';
+    b.addEventListener('click', () => {
+      const ppl = hotspots().filter(sp => sp.person).sort((a, c) => meters(a.person) - meters(c.person));
+      if (ppl[0]) speakSpot(ppl[0]);
+    });
+    box.append(b);
+  }
+  function nextSpot(){
+    if (!exploring) setExploring(true, true);
+    const spots = hotspots();
+    spotIdx = (spotIdx + 1) % spots.length;
+    speakSpot(spots[spotIdx]);
+  }
+  function setExploring(v, silent = false){
+    if (!silent) cancelTour();
+    exploring = v;
+    document.body.dataset.exploring = v ? '1' : '';
+    exploreBtn3.setAttribute('aria-pressed', String(v));
+    explorePanel.hidden = !v;
+    curSpot = null; spotIdx = -1;
+    setPreview(null);
+    if (v) {
+      me.tx = me.x; me.tz = me.z;
+      dest = null; pendingArrive = false; lieOnArrive = false;
+      buildSpotButtons();
+    } else exploreEnd();
+    if (silent) return;
+    feedback(v
+      ? '손끝 탐색을 시작합니다. 터빈 홀 화면을 훑으면 위치에 따라 소리가 달라집니다. 탐색 지점에 닿으면 설명을 들을 수 있습니다. 지점 버튼이나 마침표 키로도 위치를 확인할 수 있습니다. ‘이곳으로 이동’을 누르면 고른 자리로 걷습니다. 숫자 3을 다시 누르면 자유롭게 걷기로 돌아갑니다.'
+      : '손끝 탐색을 끄고 걷기로 돌아왔습니다.', { auto: false, level: 'state' });
+  }
+  exploreBtn3.addEventListener('click', () => setExploring(!exploring));
+  document.getElementById('nextSpotBtn').addEventListener('click', nextSpot);
+  function drawExplore(){
+    if (!exploring) return;
+    const c = hctx; c.save(); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    for (const sp of hotspots()) {
+      const active = curSpot && curSpot.key === sp.key;
+      c.beginPath(); c.arc(sp.x, sp.y, sp.r, 0, Math.PI*2);
+      c.setLineDash(active ? [] : [4, 5]);
+      c.strokeStyle = active ? 'rgba(255,241,184,0.95)' : 'rgba(255,241,184,0.35)';
+      c.lineWidth = active ? 3 : 1.2; c.stroke();
+      if (!sp.person && (active || sp.key !== 'me')) { c.setLineDash([]); c.fillStyle = active ? '#fff1b8' : 'rgba(255,241,184,0.6)'; c.font = `600 ${Math.max(11, HH*0.026)}px ${bodyFont}`; c.fillText(sp.name, sp.x - sp.r*0.5, sp.y - sp.r < 18 ? sp.y + sp.r + 16 : sp.y - sp.r - 6); }
+    }
+    c.restore();
+  }
+
+  // 안내 감상은 실제 발화가 끝난 뒤 다음 장면으로 진행한다.
+  const tourStart = document.getElementById('tourStart');
+  const tourPause = document.getElementById('tourPause');
+  const tourNext = document.getElementById('tourNext');
+  const tourStop = document.getElementById('tourStop');
+  const tourStatus = document.getElementById('tourStatus');
+  const tourSteps = [
+    { name: '전체 둘러보기', text: () => INTRO },
+    { name: '태양을 향해 걷기', z: 0.65, text: () => FOCUS[0][1]() },
+    { name: '누워서 거울 보기', lie: true, text: () => '바닥에 누웠습니다. 천장 거울에는 홀 바닥과 관람객이 비칩니다. 거울 속 내 모습도 길게 펼쳐집니다. 높은 울림이 낮아지는 소리를 들어 보세요.' },
+    { name: '안개와 빛 이해하기', text: () => FOCUS[2][1]() },
+    { name: '관객과 글자 만들기', letter: true, x: SLOT.x, z: SLOT.z, text: () => '홀 한가운데로 왔습니다. 천장 거울을 올려다보면 바닥에 누운 관람객 열세 명의 몸이 태양이라는 글자를 이루고 있습니다. 그런데 받침 ㅇ의 오른쪽 반쪽이 비어 있고, 지금 당신은 바로 그 빈 자리에 서 있습니다. 안내가 끝나면 바닥에 누워 C자로 웅크리고, 둥근 등이 태양 쪽을 향하게 몸을 돌려 글자를 완성해 보세요.' },
+    { name: '직접 탐색하기', text: () => '이제 직접 살펴볼 차례입니다. 손끝 탐색을 켰습니다. 화면이나 지점 버튼으로 위치를 소리로 확인한 뒤 ‘이곳으로 이동’을 누르세요.' }
+  ];
+  function updateTourControls(){
+    tourStart.hidden = !!tour;
+    for (const button of [tourPause, tourNext, tourStop]) button.hidden = !tour;
+    if (!tour) return;
+    tourPause.textContent = tour.paused ? '계속 감상하기' : '잠시 멈추기';
+    tourPause.setAttribute('aria-pressed', String(tour.paused));
+    tourNext.disabled = tour.paused;
+    const progress = tour.paused ? '잠시 멈춤' : tour.phase === 'walking' ? '이동 중'
+      : tour.phase === 'manual' ? '안내를 읽은 뒤 ‘다음으로’를 누르세요' : '해설 중';
+    tourStatus.textContent = `${tour.index + 1}/${tourSteps.length} · ${tourSteps[tour.index].name} · ${progress}`;
+  }
+  function cancelTour(){
+    if (!tour) return;
+    tour = null;
+    stopSpeech({ keepTour: true });
+    me.tx = me.x; me.tz = me.z;
+    dest = null; pendingArrive = false;
+    updateTourControls();
+    if ([tourPause, tourNext, tourStop].includes(document.activeElement)) tourStart.focus();
+    tourStatus.textContent = '안내 감상을 마쳤습니다. 원하는 곳을 자유롭게 살펴보세요.';
+  }
+  function narrateTour(){
+    const current = tour;
+    if (!current) return;
+    const step = tourSteps[current.index];
+    const msg = current.index === 0 ? `지금부터 작품을 함께 둘러보겠습니다. ${step.text()}` : current.index === tourSteps.length - 1 ? step.text() : `${step.name}. ${step.text()}`;
+    current.phase = canSpeak() ? 'speaking' : 'manual';
+    lastSpoken = msg;
+    showGuide(msg);
+    updateTourControls();
+    if (canSpeak()) speakTTS(msg, true, 0, () => { if (tour === current && !current.paused) nextTour(); });
+    else liveSay(msg);
+  }
+  function enterTourStep(){
+    stopSpeech({ keepTour: true });
+    const step = tourSteps[tour.index];
+    if (tour.index === tourSteps.length - 1) {
+      setExploring(true, true);
+      if (mode === 'visual') openPanel('pGuide');
+    } else setExploring(false, true);
+    me.lying = !!step.lie;
+    lieBtn.setAttribute('aria-pressed', String(me.lying));
+    lieBtn.textContent = me.lying ? '일어서기' : '바닥에 눕기';
+    syncPoseUI();
+    if (step.lie) { sfx.lie(true); markJourney('lie'); }
+    if (step.letter) setInteractOpen(true);
+    tour.target = { x: step.x ?? (step.z === undefined ? me.x : 0), z: step.z ?? me.z };
+    me.tx = tour.target.x; me.tz = tour.target.z;
+    tour.phase = 'walking';
+    updateTourControls();
+    updateTour();
+  }
+  function nextTour(){
+    if (!tour || tour.paused) return;
+    stopSpeech({ keepTour: true });
+    if (++tour.index === tourSteps.length) {
+      cancelTour();
+      tourStatus.textContent = '안내 감상을 마쳤습니다. 손끝 탐색으로 직접 살펴보세요.';
+      return;
+    }
+    enterTourStep();
+  }
+  function updateTour(){
+    if (tour && !tour.paused && tour.phase === 'walking' && Math.hypot(me.tx-me.x, me.tz-me.z) <= 0.002) narrateTour();
+  }
+  function toggleTourPause(){
+    if (!tour) return;
+    tour.paused = !tour.paused;
+    if (tour.paused) {
+      tour.speech = { msg: curMsg, idx: curIdx };
+      stopSpeech({ keepTour: true });
+      me.tx = me.x; me.tz = me.z;
+    } else if (tour.phase === 'walking') {
+      me.tx = tour.target.x; me.tz = tour.target.z;
+    } else if (tour.phase === 'speaking' && canSpeak()) {
+      const current = tour;
+      const speech = current.speech;
+      if (speech.msg) speakTTS(speech.msg, true, speech.idx, () => { if (tour === current) nextTour(); });
+      else narrateTour();
+    }
+    updateTourControls();
+  }
+  tourStart.addEventListener('click', () => {
+    stopSpeech();
+    haltMoveSilently();
+    tour = { index: 0, phase: 'walking', paused: false };
+    enterTourStep();
+    tourPause.focus();
+  });
+  function haltMoveSilently(){ me.tx = me.x; me.tz = me.z; dest = null; pendingArrive = false; lieOnArrive = false; }
+  tourNext.addEventListener('click', nextTour);
+  tourPause.addEventListener('click', toggleTourPause);
+  tourStop.addEventListener('click', () => { stopSpeech(); feedback('안내 감상을 마쳤습니다.', { auto: false }); tourStart.focus(); });
+  const tourControlIds = new Set(['tourStart','tourPause','tourNext','tourStop','pauseBtn','stopVoiceBtn']);
+  document.addEventListener('click', e => {
+    const button = e.target.closest('button');
+    if (tour && button && !tourControlIds.has(button.id)) stopSpeech();
+  }, true);
+
+  // 음성 조절 단추
+  document.getElementById('pauseBtn').addEventListener('click', togglePause);
+  const RATES = [[0.8, '느리게'], [1.0, '보통'], [1.1, '조금 빠르게'], [1.3, '빠르게'], [1.6, '아주 빠르게']];
+  const rateBtn = document.getElementById('rateBtn');
+  function syncRateBtn(){
+    let k = 0; RATES.forEach(([r], i) => { if (Math.abs(r - voiceRate) < Math.abs(RATES[k][0] - voiceRate)) k = i; });
+    rateBtn.textContent = '빠르기 · ' + RATES[k][1];
+    rateBtn.setAttribute('aria-label', `말 빠르기 바꾸기, 지금 ${RATES[k][1]}`);
+    return k;
+  }
+  function stepRate(dir){
+    let k = syncRateBtn();
+    k = dir === 0 ? (k + 1) % RATES.length : clamp(k + dir, 0, RATES.length - 1);
+    voiceRate = RATES[k][0];
+    const rEl = document.getElementById('rateVoice'); rEl.value = voiceRate; rEl.setAttribute('aria-valuetext', RATES[k][1]);
+    syncRateBtn(); saveSettings();
+    feedback(`말 빠르기 ${RATES[k][1]}.`, { auto: false });
+  }
+  rateBtn.addEventListener('click', () => stepRate(0));
+  document.getElementById('rateVoice').addEventListener('input', syncRateBtn);
+
+  // 글자 크기 · 고대비 (기기에 기억)
+  const fsRadios = [...document.querySelectorAll('input[name="fontSize"]')], hcChk = document.getElementById('hcChk');
+  function applyView(fs, hc, tell){
+    document.body.classList.remove('fs-1', 'fs-2'); if (fs > 0) document.body.classList.add('fs-' + fs);
+    document.body.classList.toggle('hc', hc);
+    fsRadios.forEach(r => { r.checked = Number(r.value) === fs; }); hcChk.checked = hc;
+    try { localStorage.setItem('sunA11yView', JSON.stringify({ fs, hc })); } catch (e) {}
+    if (tell) feedback(tell, { level: 'state' });
+  }
+  const curFs = () => Number((fsRadios.find(r => r.checked) || { value: 0 }).value);
+  fsRadios.forEach(r => r.addEventListener('change', () => applyView(curFs(), hcChk.checked, `글자 크기 ${['보통', '크게', '아주 크게'][curFs()]}.`)));
+  hcChk.addEventListener('change', () => applyView(curFs(), hcChk.checked, hcChk.checked ? '고대비를 켰습니다. 검정 바탕에 흰 글씨와 노랑 강조로 보입니다.' : '고대비를 껐습니다.'));
+  try { const v = JSON.parse(localStorage.getItem('sunA11yView') || 'null'); if (v) applyView(Number(v.fs) || 0, !!v.hc); } catch (e) {}
+
+  // 단추를 길게 누르면 이름만 들려 주기 (화면 읽기를 쓰지 않는 저시력·터치 사용자)
+  let lpTimer = null, lpFired = false, lpX = 0, lpY = 0;
+  document.addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'touch') return;
+    const b = e.target.closest('button'); if (!b || b.id === 'breath') return;
+    lpFired = false; lpX = e.clientX; lpY = e.clientY; clearTimeout(lpTimer);
+    lpTimer = setTimeout(() => {
+      lpFired = true; buzz([15]);
+      const name = (b.getAttribute('aria-label') || b.textContent).replace(/\s+/g, ' ').trim();
+      const st = b.hasAttribute('aria-pressed') ? (b.getAttribute('aria-pressed') === 'true' ? ', 켜짐' : ', 꺼짐') : '';
+      feedback(name + st + '. 손을 떼면 실행하지 않습니다. 실행하려면 짧게 누르세요.', { auto: false });
+    }, 550);
+  }, true);
+  document.addEventListener('pointermove', e => { if (lpTimer && Math.hypot(e.clientX - lpX, e.clientY - lpY) > 12) { clearTimeout(lpTimer); lpTimer = null; } }, true);
+  ['pointerup', 'pointercancel'].forEach(t => document.addEventListener(t, () => { clearTimeout(lpTimer); lpTimer = null; }, true));
+  document.addEventListener('click', e => { if (lpFired) { lpFired = false; e.preventDefault(); e.stopImmediatePropagation(); } }, true);
+  document.addEventListener('contextmenu', e => { if (e.target.closest('button')) e.preventDefault(); });
+
+  // 이동 멈추기와 되돌리기
+  const history = [];
+  function pushHistory(label){
+    history.push({ x: me.x, z: me.z, lying: me.lying, pose: me.pose, ang: me.ang, label });
+    if (history.length > 40) history.shift();
+  }
+  // 받침에 따라 을/를
+  function eul(w){ const c = w.charCodeAt(w.length - 1); return (c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28) ? w + '을' : w + '를'; }
+  function speakWhere(){ feedback('현재 위치. ' + describe().text, { auto: false }); }
+  function haltMove(){
+    const moving = Math.hypot(me.tx - me.x, me.tz - me.z) > 0.002;
+    me.tx = me.x; me.tz = me.z; pendingArrive = false; dest = null; lieOnArrive = false;
+    feedback((moving ? '그 자리에 멈췄습니다. ' : '이미 멈춰 있습니다. ') + positionShort(), { level: 'state' });
+  }
+  function goHome(){
+    if (Math.hypot(me.x - 0, me.z - 0.12) < 0.01 && !me.lying) { feedback('이미 시작 위치에 있습니다. ' + positionShort(), { level: 'state' }); return; }
+    pushHistory('시작 위치로 돌아가기');
+    pendingArrive = false; dest = { name: '시작 위치' };
+    setTarget(0, 0.12);
+    feedback('입구 쪽 시작 위치로 돌아갑니다. 멈추려면 X 키, 취소하려면 U 키를 누르세요.', { level: 'state' });
+  }
+  function undoAction(){
+    const h = history.pop();
+    if (!h) { feedback('되돌릴 동작이 없습니다.', { level: 'state' }); return; }
+    pendingArrive = false;
+    me.pose = h.pose ?? me.pose; me.ang = h.ang ?? me.ang; syncPoseUI();
+    const samePlace = Math.hypot(h.x - me.x, h.z - me.z) < 0.01;
+    if (samePlace) {
+      dest = null; me.tx = me.x; me.tz = me.z;
+      if (h.lying !== me.lying) setLying(h.lying);
+      feedback(`‘${h.label}’${eul(h.label).slice(-1)} 되돌렸습니다. ${h.lying ? '다시 누운' : '선'} 자세입니다. 남은 되돌리기 ${history.length}번.`, { level: 'state' });
+      return;
+    }
+    setTarget(h.x, h.z);
+    dest = { name: '이전 위치' }; lieOnArrive = h.lying;
+    feedback(`‘${h.label}’${eul(h.label).slice(-1)} 되돌려 이전 위치로 걸어갑니다. 남은 되돌리기 ${history.length}번.`, { level: 'state' });
+  }
+  document.getElementById('haltBtn').addEventListener('click', haltMove);
+  document.getElementById('homeBtn').addEventListener('click', goHome);
+  document.getElementById('undoBtn').addEventListener('click', undoAction);
+  document.getElementById('stopVoiceBtn').addEventListener('click', stopNarration);
+
+  // 소리와 안내 설정
+  const volBgEl = document.getElementById('volBg'), volFxEl = document.getElementById('volFx'),
+        volVoiceEl = document.getElementById('volVoice'), rateEl = document.getElementById('rateVoice'),
+        muteBtn = document.getElementById('muteBtn'), stereoChk = document.getElementById('stereoChk');
+  const verbRadios = [...document.querySelectorAll('input[name="verbosity"]')];
+  const VERB_NAME = { off: '자동 안내 끄기. 내 조작에 대한 응답만 들려 드립니다', major: '주요 이벤트만 안내. 도착, 벽, 구역 변화, 연결 같은 중요한 순간만 알려 드립니다', detail: '상세 안내. 걸음마다 위치와 작은 변화까지 알려 드립니다' };
+  const rateWord = r => r < 0.95 ? '느리게' : r < 1.05 ? '보통' : r < 1.25 ? '보통보다 조금 빠르게' : '빠르게';
+  function saveSettings(){ try { localStorage.setItem('sunA11y', JSON.stringify({ verbosity, voiceVol, voiceRate, volBg, volFx, stereoOn })); } catch (e) {} }
+  function loadSettings(){
+    try {
+      const o = JSON.parse(localStorage.getItem('sunA11y') || 'null'); if (!o) return;
+      if (o.verbosity in VERB_RANK) verbosity = o.verbosity;
+      for (const [k, el, set] of [['voiceVol', volVoiceEl, v => voiceVol = v], ['volBg', volBgEl, v => volBg = v], ['volFx', volFxEl, v => volFx = v]])
+        if (typeof o[k] === 'number') { set(o[k]); el.value = Math.round(o[k]*100); }
+      if (typeof o.voiceRate === 'number') { voiceRate = o.voiceRate; rateEl.value = o.voiceRate; }
+      if (typeof o.stereoOn === 'boolean') stereoOn = o.stereoOn;
+    } catch (e) {}
+  }
+  function syncSettingsUI(){
+    for (const el of [volBgEl, volFxEl, volVoiceEl]) el.setAttribute('aria-valuetext', el.value + '퍼센트');
+    rateEl.setAttribute('aria-valuetext', rateWord(voiceRate));
+    verbRadios.forEach(r => { r.checked = r.value === verbosity; });
+    stereoChk.checked = stereoOn && hasStereo; stereoChk.disabled = !hasStereo;
+  }
+  function bindVol(el, set, name){
+    el.addEventListener('input', () => { set(el.value/100); el.setAttribute('aria-valuetext', el.value + '퍼센트'); saveSettings(); });
+    el.addEventListener('change', () => {
+      showGuide(`${name} ${el.value}퍼센트`);
+      if (name === '효과음') tone(660, 0.15, { force: true, gain: 0.12 });
+      if (name === '음성 안내' && Number(el.value) > 0) feedback(`음성 안내 크기 ${el.value}퍼센트`, { auto: false });
+    });
+  }
+  bindVol(volBgEl, v => volBg = v, '배경음');
+  bindVol(volFxEl, v => volFx = v, '효과음');
+  bindVol(volVoiceEl, v => voiceVol = v, '음성 안내');
+  rateEl.addEventListener('input', () => { voiceRate = Number(rateEl.value); rateEl.setAttribute('aria-valuetext', rateWord(voiceRate)); saveSettings(); });
+  rateEl.addEventListener('change', () => feedback(`음성 속도 ${rateWord(voiceRate)}`, { auto: false }));
+  function setVerbosity(v){ verbosity = v; syncSettingsUI(); saveSettings(); feedback(VERB_NAME[v] + '.', { level: 'state' }); }
+  verbRadios.forEach(r => r.addEventListener('change', () => { if (r.checked) setVerbosity(r.value); }));
+  function cycleVerbosity(){ setVerbosity({ off: 'major', major: 'detail', detail: 'off' }[verbosity]); }
+  function toggleMute(){
+    muted = !muted;
+    muteBtn.setAttribute('aria-pressed', String(muted));
+    muteBtn.textContent = muted ? '음소거 해제' : '전체 음소거';
+    if (muted) { stopSpeech(); whoosh(false); }
+    feedback(muted ? '모든 소리를 껐습니다. 안내는 화면 글과 스크린리더로만 전달됩니다. Q 키로 다시 켭니다.' : '소리를 다시 켰습니다.', { level: 'state' });
+  }
+  muteBtn.addEventListener('click', toggleMute);
+  stereoChk.addEventListener('change', () => { stereoOn = stereoChk.checked; saveSettings(); feedback(stereoOn ? '좌우 소리를 켰습니다. 왼쪽과 오른쪽 위치가 양쪽 귀 소리 차이로도 들립니다.' : '좌우 소리를 껐습니다. 모든 소리가 가운데에서 들리고, 방향은 음성으로 알려 드립니다.', { level: 'state' }); });
+
+  // 기기 지원과 대체 피드백
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const hasAudio = !!AC;
+  const hasStereo = hasAudio && 'createStereoPanner' in AC.prototype;
+  function deviceGaps(){
+    const g = [];
+    if (mode !== 'reader') {
+      if (!hasTTS || ttsFailed) g.push('안내는 화면의 최근 안내와 스크린리더로 전달합니다');
+      else if (!koVoice) g.push('한국어 음성이 없어 기본 음성으로 읽습니다');
+    }
+    if (!hasAudio) g.push('소리를 낼 수 없어 효과음 대신 음성으로만 안내합니다');
+    else if (!hasStereo) g.push('좌우 소리를 지원하지 않아 방향은 음성으로 알려 드립니다');
+    if (!canVibrate) g.push('진동 대신 같은 리듬을 짧은 소리로 들려 드립니다');
+    return g.length ? '기기 안내: ' + g.join('. ') + '.' : '';
+  }
+  function speakDevice(){
+    const yes = (ok, a, b) => ok ? a : b;
+    feedback('기기 지원 확인. ' +
+      '음성 합성: ' + yes(hasTTS && !ttsFailed, koVoice ? '지원, 한국어 음성 있음. ' : '지원, 한국어 음성이 없어 기본 음성 사용. ', '지원하지 않음, 스크린리더와 화면의 최근 안내 글로 대신합니다. ') +
+      '소리 재생: ' + yes(hasAudio, '지원. ', '지원하지 않음, 효과음 대신 음성으로 안내합니다. ') +
+      '좌우 소리: ' + yes(hasStereo, stereoOn ? '지원, 사용 중. ' : '지원하지만 꺼 둠, 방향은 음성으로 안내합니다. ', '지원하지 않음, 방향은 음성으로 안내합니다. ') +
+      '진동: ' + yes(canVibrate, '지원. ', '지원하지 않음, 같은 리듬을 짧은 소리로 대신합니다. ') +
+      `현재 설정: ${{ off: '자동 안내 꺼짐', major: '주요 이벤트만 안내', detail: '상세 안내' }[verbosity]}, ${muted ? '음소거 중' : '배경음 ' + Math.round(volBg*100) + ', 효과음 ' + Math.round(volFx*100) + ', 음성 ' + Math.round(voiceVol*100) + '퍼센트'}.`,
+      { auto: false });
+  }
+  document.getElementById('deviceBtn').addEventListener('click', speakDevice);
+  loadSettings(); if (!hasStereo) stereoOn = false; syncSettingsUI(); syncRateBtn();
+  ttsBtn.disabled = !hasTTS;
+  syncTtsButton();
+
+  // 구역(먼 거리·중간·태양 가까이) 변화 안내
+  const zoneOf = z => z < 0.35 ? 0 : z < 0.75 ? 1 : 2;
+  const zoneText = ['입구 쪽 먼 구역', '홀 한가운데 구역', '태양 가까운 구역'];
+  let lastZone = zoneOf(me.z);
+
+  // 공유 환경의 다른 관람객
+  (async () => {
+    try {
+      if (!window.claude || !window.claude.use) return;
+      const r = await window.claude.use('room');
+      if (!r) return;
+      room = r;
+      r.onPeers(ch => { peers = ch.peers; }, () => { room = null; peers = []; });
+    } catch (e) {}
+  })();
+  let lastSent = 0, lastSig = '';
+  function sendPresence(now){
+    if (!room || now - lastSent < 180) return;
+    const tr = me.trail.slice(-50).map(p => [+p.x.toFixed(3), +p.z.toFixed(3)]);
+    const sig = `${me.x.toFixed(3)},${me.z.toFixed(3)},${me.lying},${me.pose},${me.ang},${tr.length},${tr.length ? tr[tr.length-1] : ''}`;
+    if (sig === lastSig) return;
+    lastSig = sig; lastSent = now;
+    room.presence({ x: +me.x.toFixed(3), z: +me.z.toFixed(3), ly: me.lying ? 1 : 0, po: me.pose, an: me.ang, tr }).catch(() => {});
+  }
+  function others(){
+    const out = [];
+    for (const p of peers) {
+      if (p.sameTab || p.kind !== 'viewer') continue;
+      const pr = p.presence || {};
+      const x = Number(pr.x), z = Number(pr.z);
+      if (!isFinite(x) || !isFinite(z)) continue;
+      const tr = Array.isArray(pr.tr) ? pr.tr.filter(a => Array.isArray(a) && isFinite(a[0]) && isFinite(a[1])).slice(-50) : [];
+      out.push({ id: 'r' + out.length, x: clamp(x,-1,1), z: clamp(z,0,1), lying: pr.ly === 1, pose: POSES[pr.po] ? pr.po : 'I', ang: Number.isFinite(+pr.an) ? +pr.an : 0, trail: tr.map(a => ({x: clamp(+a[0],-1,1), z: clamp(+a[1],0,1)})), real: true });
+    }
+    return out;
+  }
+
+  // 이동, 안개와 감상 이벤트
+  const bodyFont = getComputedStyle(document.body).fontFamily;
+  let last = performance.now(), announcedSun = false, lastStatus = 0;
+  function step(now){
+    const dt = Math.min(0.05, (now - last)/1000); last = now;
+
+    if (!me.lying) {
+      const dx = me.tx - me.x, dz = me.tz - me.z, dist = Math.hypot(dx, dz), sp = 0.32*dt;
+      if (dist > 0.002) {
+        const k = Math.min(1, sp/dist); me.x += dx*k; me.z += dz*k;
+        const lp = me.trail[me.trail.length-1];
+        if (!lp || Math.hypot(lp.x-me.x, lp.z-me.z) > 0.012) me.trail.push({x: me.x, z: me.z, t: now});
+      }
+    }
+    let expired = Math.max(0, me.trail.length - 90);
+    while (expired < me.trail.length && now - me.trail[expired].t >= 30000) expired++;
+    if (expired) me.trail.splice(0, expired);
+
+    fog = breathing ? Math.min(1, fog + dt*0.45) : Math.max(0.22, fog - dt*0.04);
+
+    // 숨결: 내 자리에서 안개 덩어리가 피어올라 퍼진다.
+    if (breathing && !reduceMotion) {
+      puffAcc += dt;
+      const [bx, by, s] = proj(me.x, me.lying ? 0.01 : 0.055, me.z);
+      while (puffAcc > 0.06) {
+        puffAcc -= 0.06;
+        if (puffs.length >= 70) puffs.shift();
+        const size = Math.max(24, s*0.14);
+        puffs.push({ x: bx + (Math.random() - 0.5)*size*0.3, y: by, vx: (Math.random() - 0.5)*s*0.06, vy: -s*(0.02 + Math.random()*0.03),
+                     size, grow: size*(0.8 + Math.random()*0.5), life: 0, max: 4 + Math.random()*3, a: 0 });
+      }
+    } else puffAcc = 0;
+    const windPush = sensory.air ? windSpeed(isWalking())*HW*0.5 : 0;
+    for (let i = puffs.length - 1; i >= 0; i--) {
+      const p = puffs[i]; p.life += dt;
+      if (p.life >= p.max) { puffs.splice(i, 1); continue; }
+      p.x += (p.vx + windPush)*dt; p.y += p.vy*dt; p.vy *= 1 - 0.35*dt; p.vx *= 1 - 0.2*dt;
+      p.size += p.grow*dt; p.grow *= 1 - 0.3*dt;
+      p.a = Math.min(1, p.life/0.4)*Math.pow(1 - p.life/p.max, 1.3);
+    }
+
+    for (const n of npcs) {
+      if (n.lying) continue;
+      const dx = n.tx-n.x, dz = n.tz-n.z, d = Math.hypot(dx, dz);
+      if (d < 0.01) { n.wait -= dt; if (n.wait < 0) { pickFree(n); n.wait = 2+Math.random()*6; } }
+      else { const k = Math.min(1, 0.07*dt/d); n.x += dx*k; n.z += dz*k; }
+    }
+    for (const b of blobs) { if (!reduceMotion) b.u = (b.u + b.s*dt) % 1.3; }
+
+    // 태양 아래에 닿으면 반원 램프의 구조를 안내한다.
+    const atSun = me.z > 0.92 && Math.abs(me.x) < 0.6;
+    if (atSun && !announcedSun) {
+      announcedSun = true; buzz([40, 60, 40]); sfx.sun(); markJourney('sun');
+      pendingArrive = false;
+      feedback(SUN_TEXT);
+    }
+    if (!atSun && me.z < 0.85) announcedSun = false;
+
+    // 방향키 이동이 끝나면 위치를 안내한다.
+    const stillMoving = !me.lying && Math.hypot(me.tx - me.x, me.tz - me.z) > 0.002;
+    if (pendingArrive && !stillMoving && now - lastMoveKey > 280) {
+      pendingArrive = false;
+      feedback((wallNote ? wallNote + ' ' : '') + positionShort() + (zoneNote ? ' ' + zoneNote : ''), { level: (wallNote || zoneNote) ? 'major' : 'detail' });
+      dest = null;
+      wallNote = ''; zoneNote = '';
+    }
+    // 목적지 도착 (포인터 이동·시작 위치·되돌리기)
+    if (dest && !pendingArrive && pointersDown === 0 && !stillMoving) {
+      const d0 = dest; dest = null;
+      if (lieOnArrive) { lieOnArrive = false; setLying(true); }
+      else { sfx.zone(); feedback(`${d0.name}에 도착했습니다. ${positionShort()}`, { level: 'major' }); }
+    }
+    letterFade += ((letterOn ? 1 : 0) - letterFade)*Math.min(1, dt*2.5);
+    // 관객의 상호작용: 빈 자리를 C자로 채우면 거울 속 태양 글자가 완성된다.
+    const filled = slotFilledNow();
+    if (filled && !slotWasFilled) {
+      slotWasFilled = true;
+      me.x = me.tx = SLOT.x; me.z = me.tz = SLOT.z; me.ang = 270;   // 자리에 딱 맞게
+      syncPoseUI();
+      [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.7, { force: true, gain: 0.08, when: i*0.12 }));
+      buzz([30, 50, 30, 50, 90]);
+      markJourney('letter');
+      feedback(LETTER_DONE_TEXT, { level: 'state' });
+    } else if (!filled && slotWasFilled) {
+      slotWasFilled = false;
+      feedback('빈 자리가 다시 비었습니다. 거울 속 받침 ㅇ이 다시 반쪽이 되었습니다.', { level: 'major', interrupt: false });
+    }
+    if (!nearSlot()) slotCueGiven = false;
+    else if (!slotCueGiven && !me.lying && atSlot() && !stillMoving && !dest && !pendingArrive) {
+      slotCueGiven = true;
+      feedback('여기가 태양 글자의 빈 자리입니다. 바닥에 누워 C자로 웅크린 뒤, 둥근 등이 태양 쪽을 향하도록 몸을 돌려 보세요. A 키로 누운 모양, D 키로 방향을 바꿉니다.', { level: 'major', interrupt: false });
+    }
+    // 거리 구역이 바뀌면 울림과 위치 안내를 갱신한다.
+    const zn = zoneOf(me.z);
+    if (zn !== lastZone) {
+      const up = zn > lastZone;
+      lastZone = zn;
+      if (sensory.sense) { senseSignal(); lastSense = now; }
+      const meaning = soundOn ? (up ? ' 배경음이 높아졌습니다.' : ' 배경음이 낮아졌습니다.') : '';
+      const rhythm = sensory.sense ? ` 울림은 이제 ${['한 번', '두 번', '세 번'][zn]}입니다.` : '';
+      if (isAssisted() && !pendingArrive && !atSun) { sfx.zone(); feedback(`${zoneText[zn]}에 들어섰습니다. ${positionShort()}${meaning}${rhythm}`); }
+      else if (isAssisted() && pendingArrive) zoneNote = `${zoneText[zn]}에 들어섰습니다.${meaning}${rhythm}`;
+    }
+    // 안개 상태 변화
+    if (fog > 0.45) fogWasThick = true;
+    else if (fogWasThick && !breathing) { fogWasThick = false; if (isAssisted()) feedback('안개가 다시 옅어졌습니다. 태양의 윤곽이 또렷해졌습니다.' + (soundOn ? ' 배경음도 다시 맑아졌습니다.' : ''), { interrupt: false, level: 'detail' }); }
+
+    if (sensory.sense) {
+      // 감각의 울림: 기존 거리별 진동 패턴 유지, 진동 미지원 기기는 같은 리듬의 짧은 효과음
+      if (now - lastSense > 2000 && !isSpeaking()) { lastSense = now; senseSignal(); }
+    } else if (soundOn && now - lastBuzz > 1400) {
+      lastBuzz = now;
+      buzz(Math.round(15 + me.z*70));
+    }
+    updateAudio();
+    sendPresence(now);
+    if (now - lastStatus > 500) { lastStatus = now; statusLine(); updateInteractStatus(); }
+  }
+
+  // 천장 거울 렌더링
+  function drawMirror(people, now = performance.now()){
+    const c = mctx; c.setTransform(dpr,0,0,dpr,0,0);
+    const fz = clamp((fog - 0.22)/0.78, 0, 1), t = reduceMotion ? 0 : now/1000;
+    // 사진 속 거울 천장: 입구 쪽은 짙은 적갈색, 태양 쪽으로 갈수록 타오르는 주황빛
+    const g = c.createLinearGradient(0,0,MW,0);
+    g.addColorStop(0, '#240700'); g.addColorStop(0.45, '#6b2203'); g.addColorStop(0.8, '#c4520a'); g.addColorStop(1, '#ff9620');
+    c.fillStyle = g; c.fillRect(0,0,MW,MH);
+    const sg = c.createRadialGradient(MW, MH/2, 0, MW, MH/2, MW*0.5);
+    sg.addColorStop(0, `rgba(255,228,150,${0.85 - fz*0.25})`); sg.addColorStop(0.35, 'rgba(255,150,40,0.28)'); sg.addColorStop(1, 'rgba(255,120,20,0)');
+    c.fillStyle = sg; c.fillRect(0,0,MW,MH);
+    c.strokeStyle = 'rgba(20,5,0,0.4)'; c.lineWidth = 1;
+    for (let i = 1; i < 16; i++) { const x = MP + i*(MW-2*MP)/16; c.beginPath(); c.moveTo(x, 0); c.lineTo(x, MH); c.stroke(); }
+    c.beginPath(); c.moveTo(0, MH/2); c.lineTo(MW, MH/2); c.stroke();
+
+    const B = bodyPx(), lw = Math.max(2, B*0.12), hr = Math.max(2, B*0.085);
+    const filled = slotWasFilled;
+    const [ax, ay] = m2s(SLOT.x, SLOT.z);
+    if (filled) {   // 완성된 글자 주변이 태양처럼 밝아진다
+      const cx0 = ax - 1.6*B, cy0 = ay - 0.6*B;
+      const gg = c.createRadialGradient(cx0, cy0, 0, cx0, cy0, B*4.2);
+      gg.addColorStop(0, `rgba(255,236,170,${0.38 + 0.1*Math.sin(t*2)})`); gg.addColorStop(1, 'rgba(255,190,80,0)');
+      c.fillStyle = gg; c.fillRect(0,0,MW,MH);
+    }
+
+    // 바닥의 빛 자국
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    for (const p of people) {
+      const tr = p.trail || []; if (tr.length < 2) continue;
+      c.strokeStyle = p.me ? 'rgba(255,236,180,0.9)' : p.real ? 'rgba(255,210,130,0.75)' : 'rgba(255,210,130,0.4)';
+      c.lineWidth = Math.max(3, MH*0.028);
+      c.shadowColor = 'rgba(255,200,100,0.8)'; c.shadowBlur = 8;
+      c.beginPath();
+      tr.forEach((q, i) => { const [sx, sy] = m2s(q.x, q.z); i ? c.lineTo(sx, sy) : c.moveTo(sx, sy); });
+      c.stroke(); c.shadowBlur = 0;
+    }
+
+    // 글자의 빈 자리: 붉은 점선 C
+    if (!filled && letterOn) {
+      const pulse = 0.5 + 0.5*Math.sin(t*3);
+      c.save(); c.setLineDash([Math.max(3, B*0.1), Math.max(3, B*0.09)]);
+      c.strokeStyle = `rgba(255,70,45,${0.55 + 0.35*pulse})`; c.fillStyle = `rgba(255,70,45,${0.25 + 0.3*pulse})`;
+      strokeBody(c, 'C', 270, ([u, v]) => [ax + u*B, ay + v*B], Math.max(1.5, lw*0.55), hr*0.9);
+      c.restore();
+    }
+
+    for (const p of people) {
+      const [sx, sy] = m2s(p.x, p.z), r = Math.max(3.5, MH*0.03);
+      c.globalAlpha = p.group ? letterFade : 1;
+      if (p.lying) {
+        const map = ([u, v]) => [sx + u*B, sy + v*B];
+        if (filled && (p.group || p.me)) {
+          c.save(); c.shadowColor = 'rgba(255,226,140,1)'; c.shadowBlur = (6 + 4*Math.sin(t*2.4))*dpr;
+          c.strokeStyle = c.fillStyle = 'rgba(255,214,120,0.95)';
+          strokeBody(c, p.pose, p.ang, map, lw*1.9, hr*1.5); c.restore();
+        }
+        c.strokeStyle = c.fillStyle = p.me ? '#0a0200' : p.real ? 'rgba(14,3,0,0.95)' : 'rgba(16,4,0,0.88)';
+        strokeBody(c, p.pose, p.ang, map, lw, hr);
+      } else {
+        c.fillStyle = p.npc ? 'rgba(14,3,0,0.75)' : '#0a0200';
+        c.beginPath(); c.arc(sx, sy, r, 0, Math.PI*2); c.fill();
+        c.beginPath(); c.ellipse(sx, sy, r*1.7, r*0.8, 0, 0, Math.PI*2); c.globalAlpha = 0.45; c.fill(); c.globalAlpha = 1;
+      }
+      const ring = p.lying ? B*0.62 : r*3.2;
+      if (p.me) {
+        c.strokeStyle = '#fff1b8'; c.lineWidth = 2; c.beginPath(); c.arc(sx, sy, ring, 0, Math.PI*2); c.stroke();
+        c.fillStyle = '#fff1b8'; c.font = `600 ${Math.max(11, MH*0.075)}px ${bodyFont}`; c.fillText('나', sx + ring*1.1, sy - ring*0.75);
+      } else if (p.real) { c.strokeStyle = 'rgba(255,241,184,0.6)'; c.lineWidth = 1.5; c.beginPath(); c.arc(sx, sy, p.lying ? ring*0.8 : r*2.4, 0, Math.PI*2); c.stroke(); }
+    }
+    c.globalAlpha = 1;
+    // 거울과 바닥 사이의 안개
+    c.globalCompositeOperation = 'screen';
+    fogSheet(c, MW, fogTexA, -MH*0.1, MH*1.2, 0.012, 0.06 + fz*0.32, 1.4, now);
+    c.globalCompositeOperation = 'source-over';
+    c.fillStyle = `rgba(255,140,40,${fog*0.14})`; c.fillRect(0,0,MW,MH);
+
+    if (showTruss()) {
+      c.fillStyle = 'rgba(10,7,2,0.88)'; c.fillRect(0,0,MW,MH);
+      c.strokeStyle = 'rgba(200,170,110,0.75)'; c.lineWidth = 1.2;
+      const cell = (MW-2*MP)/16;
+      for (let i = 0; i <= 16; i++) { const x = MP + i*cell; c.beginPath(); c.moveTo(x, MP); c.lineTo(x, MH-MP); c.stroke(); }
+      for (const y of [MP, MH/2, MH-MP]) { c.beginPath(); c.moveTo(MP, y); c.lineTo(MW-MP, y); c.stroke(); }
+      c.strokeStyle = 'rgba(200,170,110,0.4)';
+      for (let i = 0; i < 16; i++) { const x = MP + i*cell; c.beginPath(); c.moveTo(x, MP); c.lineTo(x+cell, MH/2); c.lineTo(x, MH-MP); c.stroke(); }
+      c.fillStyle = 'rgba(244,227,176,0.9)'; c.font = `500 ${Math.max(11, MH*0.07)}px ${bodyFont}`;
+      c.fillText('5층에서 내려다본 거울 뒤편: 알루미늄 판과 강철 프레임', MP + 6, MH - MP - 8);
+      if (trussLocked && trussPart >= 0) {
+        // 구조 탐색 중인 부분 강조
+        c.save(); c.strokeStyle = '#fff1b8'; c.lineWidth = 3; c.shadowColor = '#ffd36b'; c.shadowBlur = 12;
+        if (trussPart === 0) { const k = Math.min(15, Math.floor(me.z*16)); const top = me.x < 0; c.strokeRect(MP + k*cell, top ? MP : MH/2, cell, MH/2 - MP); }
+        else if (trussPart === 1) { for (const y of [MP, MH/2, MH-MP]) { c.beginPath(); c.moveTo(MP, y); c.lineTo(MW-MP, y); c.stroke(); } }
+        else if (trussPart === 2) { c.lineWidth = 2; for (let i = 0; i < 16; i++) { const x = MP + i*cell; c.beginPath(); c.moveTo(x, MP); c.lineTo(x+cell, MH/2); c.lineTo(x, MH-MP); c.stroke(); } }
+        else { c.strokeRect(MW - MP - cell, MP, cell, MH - 2*MP); }
+        c.restore();
+      }
+    }
+  }
+
+  // 터빈 홀 렌더링
+  function poly(c, pts){ c.beginPath(); pts.forEach((p, i) => i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1])); c.closePath(); }
+  const rr = (c, x, y, w, h, r) => c.roundRect ? c.roundRect(x, y, w, h, r) : c.rect(x, y, w, h);
+  function figure(c, bx, by, h){   // 선 사람의 실루엣 (몸통·다리·머리)
+    const w = h*0.26;
+    c.beginPath();
+    rr(c, bx - w/2, by - h*0.8, w, h*0.42, w*0.4);
+    rr(c, bx - w*0.46, by - h*0.46, w*0.42, h*0.46, w*0.18);
+    rr(c, bx + w*0.04, by - h*0.46, w*0.42, h*0.46, w*0.18);
+    c.fill();
+    c.beginPath(); c.arc(bx, by - h*0.9, w*0.42, 0, Math.PI*2); c.fill();
+  }
+  function drawHall(people, now){
+    const c = hctx; c.setTransform(dpr,0,0,dpr,0,0);
+    const P = proj, fz = clamp((fog - 0.22)/0.78, 0, 1), t = reduceMotion ? 0 : now/1000;
+    c.fillStyle = '#1a0500'; c.fillRect(0,0,HW,HH);
+    const fl = [P(-1,0,0), P(1,0,0), P(1,0,1), P(-1,0,1)];
+    const ce = [P(-1,1,0), P(1,1,0), P(1,1,1), P(-1,1,1)];
+    const fw = [P(-1,0,1), P(1,0,1), P(1,1,1), P(-1,1,1)];
+    const [scx, scy, s1] = P(0, 1, 1); const R = 0.336*s1;
+    const near = me.z > 0.92 && Math.abs(me.x) < 0.6;
+
+    // 천장 거울: 가까운 쪽은 어둡고 태양 쪽은 불타는 주황
+    let g = c.createLinearGradient(0, 0, 0, ce[2][1]);
+    g.addColorStop(0, '#2a0a00'); g.addColorStop(0.6, '#6e2503'); g.addColorStop(1, '#d9680c');
+    c.fillStyle = g; poly(c, [[-HW, -HH], [2*HW, -HH], ce[2], ce[3]]); c.fill();
+    c.strokeStyle = 'rgba(25,6,0,0.4)'; c.lineWidth = 1;
+    for (let i = -4; i <= 4; i++) { const a = P(i/4, 1, 0), b = P(i/4, 1, 1); c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.stroke(); }
+    for (let k = 0; k <= 10; k++) { const z = k/10; const a = P(-1, 1, z), b = P(1, 1, z); c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.stroke(); }
+
+    // 옆벽: 층마다 이어지는 보와 일정한 간격의 기둥
+    for (const side of [-1, 1]) {
+      const nb = side < 0 ? fl[0] : fl[1], fb = side < 0 ? fl[3] : fl[2], ft = side < 0 ? ce[3] : ce[2];
+      g = c.createLinearGradient(side < 0 ? 0 : HW, 0, fb[0], 0);
+      g.addColorStop(0, '#140400'); g.addColorStop(0.55, '#4e1902'); g.addColorStop(1, '#c4560a');
+      c.fillStyle = g; poly(c, [nb, fb, ft, side < 0 ? [-HW*2, -HH*2] : [HW*3, -HH*2]]); c.fill();
+      for (const y of [0.26, 0.5, 0.72]) {
+        c.fillStyle = 'rgba(14,3,0,0.5)';
+        poly(c, [P(side, y, 0), P(side, y, 1), P(side, y + 0.035, 1), P(side, y + 0.035, 0)]); c.fill();
+        const a = P(side, y + 0.035, 0), b = P(side, y + 0.035, 1);
+        c.strokeStyle = 'rgba(255,150,60,0.2)'; c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.stroke();
+      }
+      for (const z of [0.02, 0.09, 0.17, 0.27, 0.39, 0.53, 0.69, 0.86]) {
+        c.fillStyle = `rgba(12,3,0,${clamp(0.62 - z*0.5 - fz*0.2, 0.08, 0.6)})`;
+        poly(c, [P(side, 0, z), P(side, 0, z + 0.025), P(side, 1, z + 0.025), P(side, 1, z)]); c.fill();
+      }
+    }
+    // 끝 벽
+    g = c.createLinearGradient(0, fw[2][1], 0, fw[0][1]);
+    g.addColorStop(0, '#e86f12'); g.addColorStop(1, '#b8460a');
+    c.fillStyle = g; poly(c, fw); c.fill();
+
+    // 광택 있는 바닥과 그 위에 길게 비친 태양
+    const floorPts = [[-HW*2, HH*3], [HW*3, HH*3], fl[2], fl[3]];
+    g = c.createLinearGradient(0, fl[2][1], 0, HH);
+    g.addColorStop(0, '#d8650a'); g.addColorStop(0.35, '#7a2804'); g.addColorStop(1, '#1a0500');
+    c.fillStyle = g; poly(c, floorPts); c.fill();
+    c.save(); poly(c, floorPts); c.clip();
+    c.translate(scx, fl[2][1]); c.scale(1, 2.6);
+    g = c.createRadialGradient(0, 0, 0, 0, 0, R*1.6);
+    g.addColorStop(0, `rgba(255,210,100,${0.55 - fz*0.25})`); g.addColorStop(1, 'rgba(255,140,30,0)');
+    c.fillStyle = g; c.fillRect(-R*2, -R*2, R*4, R*4);
+    c.restore();
+
+    // 태양: 넓은 빛무리 + 노란 원반
+    const bloom = R*(2.6 + fz*2.6) + (slotWasFilled ? R*0.6 : 0);
+    g = c.createRadialGradient(scx, scy, R*0.8, scx, scy, bloom*2.2);
+    g.addColorStop(0, `rgba(255,190,70,${0.75 - fz*0.2})`); g.addColorStop(0.35, 'rgba(255,140,30,0.35)'); g.addColorStop(1, 'rgba(255,110,10,0)');
+    c.fillStyle = g; c.fillRect(0, 0, HW, HH);
+    if (!near) {
+      c.save(); c.shadowColor = 'rgba(255,200,80,1)'; c.shadowBlur = (30 + fz*70)*dpr;
+      g = c.createRadialGradient(scx, scy - R*0.15, 0, scx, scy, R);
+      g.addColorStop(0, '#fffbe6'); g.addColorStop(0.55, '#ffeb80'); g.addColorStop(0.92, '#ffd23c'); g.addColorStop(1, '#ffc43a');
+      c.fillStyle = g; c.beginPath(); c.arc(scx, scy, R, 0, Math.PI*2); c.fill(); c.restore();
+      if (fz > 0.03) {   // 안개가 짙을수록 윤곽이 번진다
+        g = c.createRadialGradient(scx, scy, R*0.85, scx, scy, R*1.7);
+        g.addColorStop(0, `rgba(255,222,120,${fz*0.6})`); g.addColorStop(1, 'rgba(255,170,60,0)');
+        c.fillStyle = g; c.fillRect(scx - R*2, scy - R*2, R*4, R*4);
+      }
+    } else {
+      // 아래는 실제 램프, 위는 거울에 비친 반원이다.
+      c.fillStyle = '#ffb52e'; c.beginPath(); c.arc(scx, scy, R, 0, Math.PI); c.fill();
+      c.fillStyle = 'rgba(255,181,46,0.45)'; c.beginPath(); c.arc(scx, scy, R, Math.PI, 2*Math.PI); c.fill();
+      c.strokeStyle = 'rgba(70,20,2,0.7)'; c.lineWidth = 1;
+      for (let a = 0; a <= 12; a++) { const tt = a/12*Math.PI; c.beginPath(); c.moveTo(scx, scy); c.lineTo(scx + Math.cos(tt)*R, scy + Math.sin(tt)*R); c.stroke(); }
+      for (let r = 1; r <= 4; r++) { c.beginPath(); c.arc(scx, scy, R*r/4.3, 0, Math.PI); c.stroke(); }
+      c.fillStyle = '#fff6d0';
+      for (let r = 1; r <= 4; r++) for (let a = 0; a < 6+r*5; a++) { const tt = (a+0.5)/(6+r*5)*Math.PI; const rr2 = R*(r-0.5)/4.3; c.beginPath(); c.arc(scx + Math.cos(tt)*rr2, scy + Math.sin(tt)*rr2, Math.max(1, R*0.025), 0, Math.PI*2); c.fill(); }
+      c.strokeStyle = 'rgba(20,5,0,0.9)'; c.lineWidth = 2; c.beginPath(); c.moveTo(scx - R*1.2, scy); c.lineTo(scx + R*1.2, scy); c.stroke();
+    }
+
+    // 바닥 위 빈 자리 표시
+    if (!slotWasFilled && letterOn) {
+      const [qx, qy, qs] = P(SLOT.x, 0, SLOT.z), rx = BODY_X*qs*camera.kx*0.5, pulse = 0.5 + 0.5*Math.sin(t*3);
+      c.save(); c.setLineDash([4, 4]); c.strokeStyle = `rgba(255,80,50,${0.35 + 0.3*pulse})`; c.lineWidth = 1.5;
+      c.beginPath(); c.ellipse(qx, qy, rx, Math.max(2, rx*0.3), 0, 0, Math.PI*2); c.stroke(); c.restore();
+    }
+
+    for (const p of people) {
+      const tr = p.trail || []; if (tr.length < 2) continue;
+      c.strokeStyle = p.me ? 'rgba(255,232,170,0.55)' : 'rgba(255,200,120,0.22)';
+      c.lineWidth = 2; c.beginPath();
+      tr.forEach((q, i) => { const [sx, sy] = P(q.x, 0, q.z); i ? c.lineTo(sx, sy) : c.moveTo(sx, sy); });
+      c.stroke();
+    }
+
+    // 사람: 검은 실루엣, 멀수록 안개에 묻혀 주황빛을 띤다
+    const sorted = people.slice().sort((a, b) => b.z - a.z);
+    for (const p of sorted) {
+      const [bx, by, s] = P(p.x, 0, p.z); const h = 0.07*s*0.9;
+      c.globalAlpha = p.group ? letterFade : 1;
+      const haze = clamp(p.z*0.5 + fz*0.3, 0, 0.8);
+      const col = `rgba(${Math.round(10 + haze*120)},${Math.round(2 + haze*34)},0,${p.npc ? 0.9 : 0.97})`;
+      if (p.lying) {
+        const map = ([u, v]) => P(p.x + v*BODY_X, 0.004, p.z + u*BODY_Z);
+        if (slotWasFilled && (p.group || p.me)) {
+          c.save(); c.shadowColor = 'rgba(255,220,120,1)'; c.shadowBlur = 10*dpr;
+          c.strokeStyle = c.fillStyle = 'rgba(255,210,110,0.8)';
+          strokeBody(c, p.pose, p.ang, map, s*0.02, s*0.014); c.restore();
+        }
+        c.strokeStyle = c.fillStyle = col;
+        strokeBody(c, p.pose, p.ang, map, Math.max(1.2, s*0.011), Math.max(1.4, s*0.011));
+      } else {
+        c.save(); c.globalAlpha = 0.22*(1 - haze*0.6); c.fillStyle = col; c.translate(0, by*2); c.scale(1, -1); figure(c, bx, by, h); c.restore();   // 바닥에 비친 모습
+        c.fillStyle = col; figure(c, bx, by, h);
+      }
+      if (p.me) {
+        const w = p.lying ? BODY_X*s*camera.kx*0.6 : h*0.26*2.2;
+        c.strokeStyle = '#fff1b8'; c.lineWidth = 2; c.beginPath(); c.ellipse(bx, by, w, Math.max(3, w*0.32), 0, 0, Math.PI*2); c.stroke();
+      }
+    }
+    c.globalAlpha = 1;
+
+    // 안개: 구름 질감의 안개 이미지 여러 겹이 흐르고, 숨결이 내 자리에서 피어오른다
+    c.globalCompositeOperation = 'screen';
+    fogSheet(c, HW, fogTexA, HH*0.02, HH*0.55, 0.008, 0.08 + fz*0.38, 1.7, now);
+    fogSheet(c, HW, fogTexB, HH*0.28, HH*0.50, -0.005, 0.07 + fz*0.45, 1.3, now);
+    fogSheet(c, HW, fogTexA, HH*0.52, HH*0.60, 0.014, 0.04 + fz*0.50, 2.3, now);
+    for (const p of puffs) {
+      if (p.a <= 0.01) continue;
+      c.globalAlpha = p.a*0.42; c.drawImage(puffTex, p.x - p.size/2, p.y - p.size*0.4, p.size, p.size*0.8);
+    }
+    c.globalAlpha = 1;
+    g = c.createRadialGradient(scx, scy, R, scx, scy, Math.max(HW, HH)*0.9);   // 햇빛이 안개 속에 번진다
+    g.addColorStop(0, `rgba(255,140,30,${0.16 + fz*0.2})`); g.addColorStop(1, 'rgba(255,90,10,0)');
+    c.fillStyle = g; c.fillRect(0, 0, HW, HH);
+    c.globalCompositeOperation = 'source-over';
+    c.fillStyle = `rgba(255,120,30,${0.03 + fz*0.14})`; c.fillRect(0, 0, HW, HH);
+    g = c.createRadialGradient(HW/2, HH*0.45, Math.min(HW, HH)*0.35, HW/2, HH*0.5, Math.max(HW, HH)*0.85);
+    g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(10,2,0,0.55)');
+    c.fillStyle = g; c.fillRect(0, 0, HW, HH);
+  }
+
+  // 감각 효과는 홀과 거울을 그린 뒤 덧그린다.
+  function drawSensoryEffects(near, now){
+    if (!sensory.sense && !sensory.air && !sensory.together) return;
+    const t = reduceMotion ? 0 : now / 1000;
+
+    if (sensory.sense && !showTruss()) {
+      const c = mctx;
+      const [x, y] = m2s(me.x, me.z);
+      const freq = me.z < 0.35 ? 0.65 : me.z < 0.75 ? 1.05 : 1.65;
+      c.save(); c.setTransform(dpr,0,0,dpr,0,0);
+      for (let i = 0; i < 3; i++) {
+        const phase = (t*freq + i/3) % 1;
+        c.beginPath(); c.arc(x,y, Math.max(8,MH*0.035) + phase*MH*0.115, 0, Math.PI*2);
+        c.strokeStyle = `rgba(255,241,184,${(1-phase)*(.45 + me.z*.35)})`;
+        c.lineWidth = 1.2 + me.z;
+        c.stroke();
+      }
+      c.restore();
+    }
+
+    if (sensory.air) {
+      const moving = isWalking();
+      const energy = windEnergy(moving);
+      const speed = windSpeed(moving);
+      const c = hctx; c.save(); c.setTransform(dpr,0,0,dpr,0,0);
+      c.lineWidth = Math.max(1, HW*0.0015);
+      for (let i=0; i<14; i++) {
+        const y = HH*(0.16 + i*.055);
+        const x = ((((i*0.147 + t*speed) % 1.4)+1.4)%1.4 - .2)*HW;
+        const span = HW*(0.07 + energy*.065);
+        c.beginPath(); c.moveTo(x-span, y);
+        c.bezierCurveTo(x-span*.3, y-HH*.025*energy, x+span*.15, y+HH*.020*energy, x+span, y-HH*.006);
+        c.strokeStyle = `rgba(255,233,178,${(0.10+(i%3)*.035)*energy})`;
+        c.stroke();
+      }
+      c.restore();
+    }
+
+    if (near?.length) {
+      const c = mctx; c.save(); c.setTransform(dpr,0,0,dpr,0,0);
+      const [mx,my] = m2s(me.x,me.z);
+      if (!showTruss()) near.forEach((p, i) => {
+        const [px,py] = m2s(p.x,p.z);
+        const pulse = 0.65 + 0.35*Math.sin(t*2.5+i);
+        c.beginPath(); c.moveTo(mx,my); c.lineTo(px,py);
+        c.strokeStyle = `rgba(255,205,105,${0.22+0.42*pulse})`;
+        c.lineWidth = 1.7; c.stroke();
+        c.beginPath(); c.arc(px,py,Math.max(7,MH*.038)*pulse,0,Math.PI*2);
+        c.strokeStyle = `rgba(255,227,146,${.30+.40*pulse})`; c.stroke();
+      });
+      c.restore();
+      if (near.length > 0) {
+        const h = hctx; h.save(); h.setTransform(dpr,0,0,dpr,0,0);
+        const [sx,sy,s] = proj(0,1,1);
+        const r = 0.336*s;
+        const spread = r*(1.75 + Math.min(4,near.length)*.4);
+        const gg = h.createRadialGradient(sx,sy,r*.8,sx,sy,spread);
+        gg.addColorStop(0, `rgba(255,235,170,${Math.min(.22,near.length*.055)})`);
+        gg.addColorStop(1, 'rgba(255,196,75,0)');
+        h.fillStyle=gg; h.fillRect(0,0,HW,HH);
+        h.restore();
+      }
+    }
+  }
+
+  let lastSensoryStatus = 0;
+  function buildPeople(){
+    return [
+      ...npcs.map((n, i) => ({ id: 'n' + i, x: n.x, z: n.z, lying: n.lying, pose: n.pose, ang: n.ang, npc: true })),
+      ...(letterFade > 0.02 ? letterBodies() : []),
+      ...others(),
+      { x: me.x, z: me.z, lying: me.lying, pose: me.pose, ang: me.ang, trail: me.trail, me: true }
+    ];
+  }
+  function frame(now){
+    step(now);
+    updateTour();
+    const people = buildPeople();
+    const near = sensory.together ? findNearbyPeople(people) : null;
+    drawMirror(people, now);
+    drawHall(people, now);
+    drawSensoryEffects(near, now);
+    drawExplore();
+    updateWind(now);
+    if (near) updateTogether(near, now);
+    if ((sensory.sense || sensory.air || sensory.together) && now - lastSensoryStatus > 500) {
+      lastSensoryStatus = now;
+      updateSensoryStatus(near);
+    }
+    requestAnimationFrame(frame);
+  }
+  statusLine();
+  openModeDialog();
+  requestAnimationFrame(frame);
+})();
+</script>
+
+</body>
+</html>
