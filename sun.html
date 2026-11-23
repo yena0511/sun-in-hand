@@ -137,7 +137,6 @@ dialog.keys{max-width:760px}
 .skip{position:absolute;left:12px;top:-60px;z-index:10;background:var(--glow);color:var(--ink);padding:8px 14px;border-radius:8px;font-weight:600;text-decoration:none}
 .skip:focus{top:10px}
 .sheet-title{font-family:var(--font-display);font-size:18px;color:var(--glow);margin:0}
-body[data-mode="visual"] .sheet-title{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 body:not([data-mode="visual"]) .sheet{margin-top:0}
 .dpad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-areas:". up ." "left down right";gap:8px;max-width:520px}
 .dpad button{font-size:15px;padding:14px 8px;border-radius:14px;white-space:nowrap}
@@ -163,6 +162,87 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
 #modeDialog .mode-hint{font-size:12px;margin:12px 0 0}
 @media (max-width:480px){#modeDialog{padding:18px 16px}#modeDialog .choices button{padding:11px 14px}}
 
+/* ── 단순 구조: 무대 + 하단 단추 5개, 기능은 한 번에 한 창(각 5개 이하) ── */
+:root{--dock-h:0px}
+body{padding-block:10px calc(var(--dock-h) + 12px)}
+.wrap{gap:10px}
+header{display:block}
+h1{font-size:clamp(20px,3vw,26px)}
+.panel{margin-inline:auto;max-width:100%;border-color:rgba(88,36,10,.6);border-radius:12px;overflow:hidden}
+.tag{background:rgba(15,10,2,.45);letter-spacing:.06em}
+@keyframes hintOut{0%,80%{opacity:.85}100%{opacity:0}}
+.tag.hint{animation:hintOut 9s ease forwards}
+@keyframes hintShrink{0%,80%{max-width:20em;opacity:1}100%{max-width:0;opacity:0}}
+.tag-hint{display:inline-block;overflow:hidden;white-space:nowrap;vertical-align:bottom;animation:hintShrink 9s ease forwards}
+@media (prefers-reduced-motion: reduce){.tag.hint{animation:none}.tag-hint{animation:none}}
+@media (max-width:640px){ .tag{font-size:10px;top:5px;left:6px}.tag.r{right:6px}.stage{gap:4px} }
+
+/* 하단 고정 조작부 */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:30;display:block;
+  background:rgba(19,5,0,.94);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  border-top:1px solid rgba(88,36,10,.7);
+  padding:6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px))}
+.dock-in{max-width:760px;margin:0 auto;display:grid;gap:4px}
+.dock .status{font-size:12.5px;color:var(--muted);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:1.5em}
+.dock .status b{color:var(--glow)}
+.dock .controls{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+.dock .controls button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  background:transparent;color:var(--text);border:0;border-radius:14px;min-height:56px;padding:6px 2px;font-size:12.5px;font-weight:500;word-break:keep-all;line-height:1.2}
+.dock .controls button::before{content:attr(data-icon);font-size:20px;line-height:1;color:var(--amber)}
+.dock .controls button[data-key]::after{display:none}
+.dock .controls button:active{background:rgba(255,157,46,.12)}
+.dock .controls button[aria-expanded="true"]{background:rgba(255,157,46,.16);color:var(--glow)}
+.dock .controls #breath[aria-pressed="true"],.dock .controls #lie[data-lying="1"]{background:var(--amber);color:var(--ink)}
+.dock .controls #breath[aria-pressed="true"]::before,.dock .controls #lie[data-lying="1"]::before{color:var(--ink)}
+.dock .controls #lie[data-lying="1"][aria-expanded="true"]{box-shadow:inset 0 0 0 2px var(--glow)}
+body.hc .dock{background:#000}
+body.hc .dock .controls button{border:2px solid var(--line)}
+body.fs-1 .dock-in{zoom:1.1} body.fs-2 .dock-in{zoom:1.2}
+@media (min-width:760px){
+  .dock .controls button{flex-direction:row;gap:8px;min-height:46px;font-size:14px}
+  .dock .controls button::before{font-size:17px}
+}
+
+/* 창(시트): 푸터 위로 올라옴 */
+.sheet{position:fixed;z-index:29;left:50%;transform:translateX(-50%);
+  width:min(640px, calc(100% - 16px));bottom:calc(var(--dock-h) + 8px);margin:0;
+  max-height:calc(100vh - var(--dock-h) - 60px);overflow:auto;overscroll-behavior:contain;
+  border:1px solid var(--amber);border-radius:16px;padding:12px 14px 14px;display:grid;gap:12px;
+  background:#230a02;box-shadow:0 12px 40px rgba(0,0,0,.65)}
+@supports (height:100dvh){ .sheet{max-height:calc(100dvh - var(--dock-h) - 60px)} }
+body.hc .sheet{background:#000}
+.sheet .lead{margin:0;font-size:13.5px;color:var(--muted);line-height:1.6}
+.sheet-head{display:flex;align-items:center;gap:8px}
+.sheet-title{flex:1;font-family:var(--font-display);font-size:18px;color:var(--glow);margin:0}
+.sheet-title:focus{outline:none}
+.sheet-title:focus-visible{outline:2px solid var(--glow);outline-offset:3px;border-radius:4px}
+.sheet-back,.sheet-close{flex:none;width:38px;height:38px;padding:0;border-radius:50%;font-size:16px}
+/* 창 안의 목록: 큰 터치 영역, 한 줄에 하나 */
+.list{display:grid;gap:6px}
+.list button{width:100%;text-align:left;border-radius:12px;padding:12px 14px;font-size:15px}
+.list button.go{display:flex;flex-direction:column;align-items:flex-start;position:relative;padding-right:36px}
+.list button.go small{display:block;font-size:12px;font-weight:400;color:var(--muted);margin-top:2px}
+.list button.go::after{content:"›"!important;position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:22px;border:0!important;opacity:.7!important;margin:0!important;padding:0!important}
+.list button[hidden]{display:none}
+.list-wrap{display:grid;gap:10px}
+.stages{grid-template-columns:1fr;gap:6px}
+.stage-btn{padding:9px 14px;font-size:15px;position:relative;padding-right:36px}
+.stage-btn::after{content:"›";position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:22px;opacity:.7}
+#introBtn::after{content:"▷";font-size:14px}
+.stage-btn .num{flex:0 0 30px;height:30px}
+.dpad{max-width:none;gap:6px}
+.dpad button{padding:14px 6px;font-size:15px}
+.posebar{display:flex;flex-wrap:wrap;gap:6px}
+.posebar button{padding:8px 12px;font-size:13.5px}
+.sheet .settings{display:grid;grid-template-columns:1fr;gap:12px;font-size:14px}
+.sheet .settings .group{padding:6px 12px 10px}
+.sheet .settings .radios{display:flex;flex-wrap:wrap;gap:6px 14px}
+.sheet .settings .radios legend{width:100%}
+.sheet .guide{font-size:14.5px;margin:0;max-height:7em;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:rgba(242,182,50,.05)}
+details.about{font-size:13.5px;color:var(--muted)}
+details.about summary{cursor:pointer;color:var(--text);padding:6px 0}
+details.about p{margin:8px 0 0}
+@media (pointer:coarse){ .kbdhint{display:none} }
 </style>
 </head>
 <body data-mode="visual">
@@ -176,7 +256,7 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
   </div>
   <p class="mode-hint" id="welcomeStatus" role="status" aria-live="polite">시작 안내는 버튼을 눌러 재생합니다. 안내 도중에도 감상 방식을 선택할 수 있습니다.</p>
   <p class="mode-intro" id="modeDesc">올라퍼 엘리아슨의 설치 작품 《The Weather Project》를 웹에서 재해석했습니다. 가상의 터빈 홀 끝에는 태양이 떠 있고, 천장 거울에는 바닥과 관람객이 비칩니다.</p>
-  <p class="mode-intro" id="modeActions">태양을 향해 걸어 보세요. 소리를 켜면 가까이 갈수록 음이 높아집니다. ‘숨 불어넣기’로 안개를 만들고, 바닥에 누워 거울을 올려다볼 수도 있어요. 다른 관람객과 함께 누운 몸으로 거울 속 글자를 완성해 보세요.</p>
+  <p class="mode-intro" id="modeActions">태양을 향해 걸어 보세요. 소리를 켜면 가까이 갈수록 음이 높아집니다. ‘안개 피우기’로 홀을 안개로 채우고, 바닥에 누워 거울을 올려다볼 수도 있어요. 다른 관람객과 함께 누운 몸으로 거울 속 글자를 완성해 보세요.</p>
   <h3 id="modeChoiceTitle">감상 방식</h3>
   <p class="mode-intro">세 방식 모두 같은 작품을 감상합니다. 화면을 보며 움직일지, 어떤 목소리로 안내받을지에 따라 골라 주세요.</p>
   <div class="choices" role="group" aria-labelledby="modeChoiceTitle">
@@ -186,7 +266,7 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
     </div>
     <div class="mode-option">
       <button id="modeNonvisual" type="button" aria-keyshortcuts="2" aria-describedby="modeNonvisualDesc">2. 음성 안내로 감상<small>작품의 목소리로 공간과 변화를 안내받고 싶을 때</small></button>
-      <p id="modeNonvisualDesc">화면을 계속 보지 않아도 태양까지의 거리와 내 조작에 따른 변화를 알 수 있도록 작품이 음성과 효과음으로 안내합니다. 화면이나 지점 버튼으로 위치를 먼저 확인한 뒤 ‘이곳으로 이동’을 눌러 걸어요. 방향키나 걷기 버튼으로도 이동할 수 있고, 별도의 화면 읽기 프로그램은 필요하지 않습니다.</p>
+      <p id="modeNonvisualDesc">화면을 계속 보지 않아도 태양까지의 거리와 내 조작에 따른 변화를 알 수 있도록 작품이 음성과 효과음으로 안내합니다. 화면 아래 ‘걷기’ 단추나 방향키로 걷고, 화면을 짚어 위치를 소리로 확인할 수도 있어요. 별도의 화면 읽기 프로그램은 필요하지 않습니다.</p>
     </div>
     <div class="mode-option">
       <button id="modeReader" type="button" aria-keyshortcuts="3" aria-describedby="modeReaderDesc">3. 화면 읽기 사용<small>평소 쓰는 화면 읽기 프로그램으로 조작하고 싶을 때</small></button>
@@ -196,140 +276,147 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
   <p class="mode-hint">이 창에서는 숫자 <kbd>1</kbd>·<kbd>2</kbd>·<kbd>3</kbd>으로 감상 방식을 선택하고, <kbd>H</kbd>로 시작 안내를 들을 수 있어요. 음성이 나오는 동안 <kbd>Esc</kbd>를 누르면 음성만 멈춥니다. 감상을 시작한 뒤에도 ‘처음 화면’에서 방식을 바꿀 수 있어요.</p>
 </dialog>
 
-<a class="skip" href="#walkTitle" id="skipLink">걷기 버튼과 감상 도구로 건너뛰기</a>
-
 <div class="sr" id="a11yLive" aria-live="polite" aria-atomic="true"></div>
 
 <div class="wrap">
   <header>
-    <div>
-      <h1>손 안의 태양</h1>
-      <div class="credit">올라퍼 엘리아슨의 《The Weather Project》(2003, 테이트 모던)를 재해석한 웹 작품</div>
-    </div>
-    <div class="top-actions">
-      <button id="modeBtn" class="chip" type="button" aria-keyshortcuts="M" data-key="M">감상 모드 · 일반</button>
-      <button id="startBtn" class="chip" type="button" aria-haspopup="dialog">처음 화면</button>
-      <button id="keysBtn" class="chip" type="button" aria-keyshortcuts="?" aria-haspopup="dialog" data-key="?">단축키</button>
-    </div>
+    <h1>손 안의 태양</h1>
   </header>
 
   <div class="stage">
     <div class="panel" id="mirrorPanel">
       <canvas id="mirror" role="img" aria-label="천장 거울. 위에서 내려다본 홀 바닥과, 관람객이 비칩니다. ‘관객의 상호작용’을 열면 누운 관람객들이 몸으로 만든 ‘태양’ 글자도 비칩니다. 누르거나 끌면 그 자리로 걸어갑니다. 거울 뒤 구조는 ‘작품 이해’의 거울 뒤 구조 보기 버튼이나 T 키로도 볼 수 있습니다."></canvas>
-      <span class="tag">천장 거울 · 길게 누르면 뒤편</span><span class="tag r">태양 쪽 →</span>
+      <span class="tag">천장 거울<span class="tag-hint"> · 길게 누르면 뒤편</span></span><span class="tag r">태양 쪽 →</span>
     </div>
     <div class="panel" id="hallPanel">
-      <canvas id="hall" tabindex="0" role="application" aria-roledescription="탐색 공간" aria-label="터빈 홀 탐색 공간. 방향키로 걷고, 스페이스를 누르고 있으면 숨을 붑니다. H 키로 조작법, S 키로 지금 상태를 듣습니다."></canvas>
-      <span class="tag">터빈 홀</span><span class="tag r hint">바닥을 누르거나 방향키로 걷기</span>
+      <canvas id="hall" tabindex="-1" role="application" aria-roledescription="탐색 공간" aria-label="터빈 홀 탐색 공간. 방향키로 걷고, 스페이스로 안개를 피우고 멈춥니다. H 키로 조작법, S 키로 지금 상태를 듣습니다."></canvas>
+      <span class="tag">터빈 홀</span><span class="tag r hint">바닥을 눌러 걷기</span>
     </div>
   </div>
 
-  <div class="dock">
-
-    <section id="dpadWrap" aria-labelledby="walkTitle" hidden>
-      <h2 class="dpad-title" id="walkTitle" tabindex="-1">걷기 · 한 번 누를 때마다 한 걸음(약 9m)</h2>
-      <div class="dpad" role="group" aria-labelledby="walkTitle">
-        <button class="up" id="stepUp" type="button" aria-keyshortcuts="ArrowUp" aria-label="태양 쪽으로 한 걸음">↑ 태양 쪽</button>
-        <button class="left ghost" id="stepLeft" type="button" aria-keyshortcuts="ArrowLeft" aria-label="왼쪽 벽 쪽으로 한 걸음">← 왼쪽</button>
-        <button class="down ghost" id="stepDown" type="button" aria-keyshortcuts="ArrowDown" aria-label="입구 쪽으로 한 걸음">↓ 입구 쪽</button>
-        <button class="right ghost" id="stepRight" type="button" aria-keyshortcuts="ArrowRight" aria-label="오른쪽 벽 쪽으로 한 걸음">→ 오른쪽</button>
-      </div>
-    </section>
-    <div class="controls" role="group" aria-label="핵심 조작">
-      <button id="breath" aria-describedby="breathHint" aria-keyshortcuts="Space B" data-key="Space">숨 불어넣기 (꾹 누르기)</button>
-      <button id="lie" class="ghost" aria-pressed="false" aria-keyshortcuts="L" data-key="L">바닥에 눕기</button>
-      <button id="sound" class="ghost" aria-pressed="false">소리로 감상하기</button>
-      <button id="speak" class="ghost" aria-keyshortcuts="S W" data-key="S">지금 상태 듣기</button>
+  <!-- ── 걷기 ── -->
+  <section class="sheet" id="sWalk" aria-labelledby="walkTitle" hidden>
+    <h2 class="sheet-title" id="walkTitle" tabindex="-1">걷기</h2>
+    <p class="lead">한 번 누를 때마다 한 걸음(약 9m) 움직입니다.</p>
+    <div class="dpad" role="group" aria-labelledby="walkTitle">
+      <button class="up" id="stepUp" type="button" aria-keyshortcuts="ArrowUp" aria-label="태양 쪽으로 한 걸음">↑ 태양 쪽</button>
+      <button class="left ghost" id="stepLeft" type="button" aria-keyshortcuts="ArrowLeft" aria-label="왼쪽 벽 쪽으로 한 걸음">← 왼쪽</button>
+      <button class="down ghost" id="stepDown" type="button" aria-keyshortcuts="ArrowDown" aria-label="입구 쪽으로 한 걸음">↓ 입구 쪽</button>
+      <button class="right ghost" id="stepRight" type="button" aria-keyshortcuts="ArrowRight" aria-label="오른쪽 벽 쪽으로 한 걸음">→ 오른쪽</button>
     </div>
-    <div class="posebar" id="poseBar" role="group" aria-labelledby="poseTitle" aria-describedby="poseHint">
-      <span class="pose-title" id="poseTitle">누운 모양 <span class="kbdhint" aria-hidden="true">A</span></span>
+    <div class="list"><button class="ghost go" type="button" data-open="vMove">빠른 이동<small>태양 아래로 · 시작 위치 · 멈추기 · 되돌리기</small></button></div>
+  </section>
+  <section class="sheet" id="vMove" data-parent="sWalk" aria-labelledby="hMove" hidden>
+    <h2 class="sheet-title" id="hMove" tabindex="-1">빠른 이동</h2>
+    <div class="list">
+      <button id="sunBtn" class="ghost" type="button" aria-keyshortcuts="G" data-key="G">태양 아래로 걸어가기</button>
+      <button id="homeBtn" class="ghost" type="button" aria-keyshortcuts="Home 0" data-key="0">시작 위치로</button>
+      <button id="haltBtn" class="ghost" type="button" aria-keyshortcuts="X" data-key="X">이동 멈추기</button>
+      <button id="undoBtn" class="ghost" type="button" aria-keyshortcuts="U Backspace" data-key="U">되돌리기</button>
+    </div>
+  </section>
+
+  <!-- ── 누운 자세 ── -->
+  <section class="sheet" id="sPose" aria-labelledby="hPose" hidden>
+    <h2 class="sheet-title" id="hPose" tabindex="-1">누운 자세</h2>
+    <p class="lead" id="poseHint">모양을 고르면 바로 바뀝니다. 왼쪽·오른쪽 방향키로 모양 사이를 옮겨 다닙니다.</p>
+    <div class="posebar" id="poseBar" role="toolbar" aria-label="누운 모양" aria-describedby="poseHint">
       <button class="ghost" type="button" data-pose="I" aria-pressed="false">ㅣ 일자</button>
       <button class="ghost" type="button" data-pose="T" aria-pressed="false">T 팔 벌리기</button>
       <button class="ghost" type="button" data-pose="Y" aria-pressed="false">Y 만세</button>
       <button class="ghost" type="button" data-pose="X" aria-pressed="false">X 큰 대(大)자</button>
       <button class="ghost" type="button" data-pose="C" aria-pressed="false">C 웅크리기</button>
-      <button id="rotateBtn" class="ghost" type="button" aria-keyshortcuts="D" data-key="D">↻ 몸 돌리기</button>
     </div>
-    <span id="poseHint" class="sr">모양을 고르면 그 모양으로 바닥에 눕습니다. 누운 채로 다른 모양을 고르면 바로 바뀝니다. A 키로 다음 모양, D 키로 몸을 45도씩 돌립니다.</span>
-    <span id="breathHint" class="sr">누르고 있는 동안 홀에 안개가 짙어집니다. 스크린리더로 한 번 누르거나 B 키를 누르면 약 3초 동안 숨을 붑니다.</span>
-    <div class="statusbar">
-      <div class="status" id="status"><b id="statusDistance"></b><span id="statusDetails"></span></div>
-      <p class="guide" id="guideText"><b>최근 안내</b> · 아직 안내가 없습니다.</p>
-      <div class="voicebar" role="group" aria-label="음성 조절">
-        <button id="pauseBtn" class="ghost" type="button" aria-label="음성 일시정지">⏸ 일시정지</button>
-        <button id="repeatBtn" class="ghost" type="button" aria-keyshortcuts="R" aria-label="마지막 안내 다시 듣기">↺ 다시 듣기</button>
-        <button id="rateBtn" class="ghost" type="button" aria-keyshortcuts="+ -" aria-label="말 빠르기 바꾸기, 지금 보통보다 조금 빠르게">빠르기 · 조금 빠르게</button>
-        <button id="stopVoiceBtn" class="ghost" type="button" aria-keyshortcuts="Escape" aria-label="음성 멈추기">■ 멈추기</button>
-      </div>
+    <div class="list">
+      <button id="rotateBtn" class="ghost" type="button" aria-keyshortcuts="D" data-key="D">↻ 몸 45도 돌리기</button>
+      <button id="standBtn" class="ghost" type="button" aria-keyshortcuts="L" data-key="L">일어서기</button>
     </div>
-  </div>
+  </section>
 
-  <nav class="menu" aria-label="더 많은 기능">
-    <button class="tabchip" type="button" id="tabGuide" aria-expanded="false" aria-controls="pGuide">감상 단계</button>
-    <button class="tabchip" type="button" id="tabLearn" aria-expanded="false" aria-controls="pLearn">작품 이해</button>
-    <button class="tabchip" type="button" id="tabMove" aria-expanded="false" aria-controls="pMove">이동</button>
-    <button class="tabchip" type="button" id="tabSense" aria-expanded="false" aria-controls="pSense">감각 확장</button>
-    <button class="tabchip" type="button" id="tabSet" aria-expanded="false" aria-controls="pSet">설정</button>
-  </nav>
+  <!-- ── 듣기 ── -->
+  <section class="sheet" id="sListen" aria-labelledby="hListen" hidden>
+    <h2 class="sheet-title" id="hListen" tabindex="-1">듣기</h2>
+    <p class="guide" id="guideText"><b>최근 안내</b> · 아직 안내가 없습니다.</p>
+    <div class="list">
+      <button id="speak" class="ghost" type="button" aria-keyshortcuts="S W" data-key="S">지금 상태 듣기</button>
+      <button id="repeatBtn" class="ghost" type="button" aria-keyshortcuts="R" data-key="R" aria-label="마지막 안내 다시 듣기">↺ 다시 듣기</button>
+      <button id="pauseBtn" class="ghost" type="button" aria-label="음성 일시정지">⏸ 일시정지</button>
+      <button id="stopVoiceBtn" class="ghost" type="button" aria-keyshortcuts="Escape" aria-label="음성 멈추기">■ 멈추기</button>
+      <button id="sound" class="ghost" type="button" aria-pressed="false">소리 켜기</button>
+    </div>
+  </section>
 
-  <section class="sheet" id="pGuide" aria-labelledby="hGuide" hidden>
-    <h2 class="sheet-title" id="hGuide">감상 단계</h2>
-    <p class="lead">전체 해설로 공간을 살펴보고, 관심 있는 대상을 골라 듣거나 손끝으로 찾아보세요.</p>
-    <div class="tools" role="group" aria-label="순서대로 감상">
+  <!-- ── 더보기 ── -->
+  <section class="sheet" id="pMore" aria-labelledby="hMore" hidden>
+    <h2 class="sheet-title" id="hMore" tabindex="-1">더보기</h2>
+    <nav class="list" id="menuNav" aria-label="더 많은 기능">
+      <button class="ghost go" type="button" id="tabGuide" data-open="pGuide">감상 안내<small>안내 투어 · 초점 · 손끝 탐색 · 글자 완성</small></button>
+      <button class="ghost go" type="button" id="tabLearn" data-open="pLearn">작품 이해<small>거울의 원리 · 숨은 구조 · 감상 기록</small></button>
+      <button class="ghost go" type="button" id="tabSense" data-open="pSense">감각 확장<small>울림 · 바람 · 빛 · 마이크</small></button>
+      <button class="ghost go" type="button" id="tabSet" data-open="pSet">설정<small>감상 방식 · 소리 · 글자 크기</small></button>
+      <button class="ghost go" type="button" id="tabHelp" data-open="pHelp">도움말<small>처음 화면 · 조작법 · 작품 소개</small></button>
+    </nav>
+  </section>
+
+  <section class="sheet" id="pGuide" data-parent="pMore" aria-labelledby="hGuide" hidden>
+    <h2 class="sheet-title" id="hGuide" tabindex="-1">감상 안내</h2>
+    <div class="stages">
+      <button id="tourOpen" class="stage-btn" type="button" data-open="vTour"><span class="num" aria-hidden="true">▶</span><span>안내 투어<small>처음부터 순서대로 듣기</small></span></button>
+      <button id="introBtn" class="stage-btn" type="button" aria-keyshortcuts="1 I"><span class="num" aria-hidden="true">1</span><span>전체<small>공간과 작품을 한 번에</small></span></button>
+      <button id="focusBtn" class="stage-btn" type="button" aria-keyshortcuts="2"><span class="num" aria-hidden="true">2</span><span>초점<small>태양·거울·안개·관람객·홀</small></span></button>
+      <button id="exploreOpen" class="stage-btn" type="button" aria-keyshortcuts="3"><span class="num" aria-hidden="true">3</span><span>손끝 탐색<small>소리로 홀 곳곳 찾기</small></span></button>
+      <button id="interactBtn" class="stage-btn" type="button" aria-keyshortcuts="4"><span class="num" aria-hidden="true">4</span><span>관객의 상호작용<small>누운 몸으로 태양 글자 완성</small></span></button>
+    </div>
+  </section>
+  <section class="sheet" id="vTour" data-parent="pGuide" aria-labelledby="hTour" hidden>
+    <h2 class="sheet-title" id="hTour" tabindex="-1">안내 투어</h2>
+    <p class="lead" id="tourStatus" role="status" aria-live="polite">소개를 듣고 태양과 거울을 둘러본 뒤 직접 탐색합니다. 화면 읽기 사용 시 ‘다음으로’를 눌러 진행하세요.</p>
+    <div class="list">
       <button id="tourStart" type="button">처음부터 안내받기</button>
       <button id="tourPause" class="ghost" type="button" hidden>잠시 멈추기</button>
       <button id="tourNext" class="ghost" type="button" hidden>다음으로</button>
       <button id="tourStop" class="ghost" type="button" hidden>안내 감상 끝내기</button>
     </div>
-    <p class="lead" id="tourStatus" role="status" aria-live="polite">소개를 듣고 태양과 거울을 둘러본 뒤 직접 탐색합니다. 화면 읽기 사용 시 ‘다음으로’를 눌러 진행하세요.</p>
-    <div class="stages">
-      <button id="introBtn" class="stage-btn" type="button" aria-keyshortcuts="1 I"><span class="num" aria-hidden="true">1</span><span>전체<small>공간과 작품을 한 번에</small></span></button>
-      <button id="focusBtn" class="stage-btn" type="button" aria-keyshortcuts="2" aria-expanded="false" aria-controls="focusList"><span class="num" aria-hidden="true">2</span><span>초점<small>태양·거울·안개·관람객·홀 하나씩</small></span></button>
-      <button id="exploreModeBtn" class="stage-btn" type="button" aria-keyshortcuts="3" aria-pressed="false" aria-controls="explorePanel"><span class="num" aria-hidden="true">3</span><span>손끝 탐색<small>소리로 홀 곳곳 찾기</small></span></button>
-      <button id="interactBtn" class="stage-btn" type="button" aria-keyshortcuts="4" aria-expanded="false" aria-controls="interactPanel"><span class="num" aria-hidden="true">4</span><span>관객의 상호작용<small>누운 몸으로 태양 글자 완성</small></span></button>
-      <button id="helpBtn" class="stage-btn" type="button" aria-keyshortcuts="H"><span class="num" aria-hidden="true">?</span><span>조작법 듣기<small>단추와 키 찾는 법</small></span></button>
+  </section>
+  <section class="sheet" id="vFocus" data-parent="pGuide" aria-labelledby="hFocus" hidden>
+    <h2 class="sheet-title" id="hFocus" tabindex="-1">초점 · 하나씩 듣기</h2>
+    <div id="focusList" class="list" role="group" aria-labelledby="hFocus">
+      <button id="focusSun" class="ghost" type="button">태양</button>
+      <button id="focusMirror" class="ghost" type="button" aria-keyshortcuts="V">천장 거울</button>
+      <button id="focusFog" class="ghost" type="button">안개</button>
+      <button id="focusPeople" class="ghost" type="button" aria-keyshortcuts="N">관람객</button>
+      <button id="focusHall" class="ghost" type="button">홀 공간</button>
     </div>
-    <div id="focusList" class="substage" role="group" aria-label="2 초점: 하나씩 듣기" hidden>
-      <div class="tools">
-        <button id="focusSun" class="ghost" type="button">태양</button>
-        <button id="focusMirror" class="ghost" type="button" aria-keyshortcuts="V">천장 거울</button>
-        <button id="focusFog" class="ghost" type="button">안개</button>
-        <button id="focusPeople" class="ghost" type="button" aria-keyshortcuts="N">관람객</button>
-        <button id="focusHall" class="ghost" type="button">홀 공간</button>
-      </div>
-    </div>
-    <div id="explorePanel" class="substage" role="group" aria-labelledby="exploreLead" hidden>
-      <p class="lead" id="exploreLead">위쪽 ‘터빈 홀’ 화면을 손가락이나 마우스로 훑어 보세요. 위로 갈수록 소리가 높아지고, 좌우로 움직이면 소리의 방향도 달라집니다. 탐색 지점에 가까워지면 소리나 진동이 잦아지고, 닿으면 그곳의 설명을 들을 수 있습니다. 손을 떼면 고른 위치가 유지됩니다. ‘이곳으로 이동’을 누르면 그때 걷기 시작합니다. 아래 지점 버튼이나 마침표 키로도 위치를 고를 수 있습니다.</p>
+  </section>
+  <section class="sheet" id="vExplore" data-parent="pGuide" aria-labelledby="hExplore" hidden>
+    <h2 class="sheet-title" id="hExplore" tabindex="-1">손끝 탐색</h2>
+    <div id="explorePanel" class="list-wrap">
+      <p class="lead" id="exploreLead">터빈 홀 화면을 손가락으로 훑으면 위로 갈수록 소리가 높아집니다. 탐색 지점에 닿으면 설명이 나옵니다. ‘다음 지점’으로도 고를 수 있습니다.</p>
       <p class="lead" id="previewStatus" role="status" aria-live="off">이동할 위치를 먼저 소리로 확인하세요.</p>
-      <div class="tools"><button id="previewMove" type="button" disabled aria-describedby="previewStatus">이곳으로 이동</button></div>
-      <div class="tools" id="spotBtns"></div>
-      <div class="tools"><button id="nextSpotBtn" class="ghost" type="button" aria-keyshortcuts=".">다음 지점 ▶</button></div>
-    </div>
-    <div id="interactPanel" class="substage" role="group" aria-labelledby="interactLead" hidden>
-      <p class="lead" id="interactLead">이 단계를 여는 동안에만 관람객들이 모여 눕습니다. 2003년 관람객들은 처음 만난 사람들과 바닥에 함께 누워 몸으로 글자를 만들고 천장 거울로 읽었습니다. 지금 홀 한가운데에서는 관람객 열세 명이 누워 거울 속에 ‘태양’을 쓰고 있는데, 받침 ㅇ의 오른쪽 반쪽(거울 속 붉은 점선)이 비어 있습니다.</p>
-      <ol class="steps">
-        <li><strong>빈 자리로 가기</strong> · 거울의 붉은 점선을 누르거나 ‘빈 자리로 걸어가기’(<kbd>O</kbd>)</li>
-        <li><strong>C자로 웅크려 눕기</strong> · 누운 모양에서 ‘C 웅크리기’(<kbd>A</kbd>로 바꾸기)</li>
-        <li><strong>몸 돌리기</strong> · 둥근 등이 태양 쪽(거울의 오른쪽)을 향하도록 ‘몸 돌리기’(<kbd>D</kbd>)</li>
-      </ol>
-      <p class="lead" id="interactStatus" role="status" aria-live="off">빈 자리를 찾아보세요.</p>
-      <div class="tools">
-        <button id="letterListen" class="ghost" type="button">거울 속 글자 듣기</button>
-        <button id="slotGoBtn" class="ghost" type="button" aria-keyshortcuts="O" data-key="O">빈 자리로 걸어가기</button>
-        <button id="slotCheckBtn" class="ghost" type="button">맞게 누웠는지 확인</button>
+      <div class="list">
+        <button id="nextSpotBtn" class="ghost" type="button" aria-keyshortcuts=".">다음 지점 ▶</button>
+        <button id="previewMove" type="button" disabled aria-describedby="previewStatus">이곳으로 이동</button>
+        <button id="exploreModeBtn" class="ghost" type="button" aria-pressed="false">손끝 탐색 켜짐</button>
       </div>
     </div>
-    <details>
-      <summary>작품 소개와 조작법을 글로 읽기</summary>
-      <p id="introText"></p>
-      <p id="keyHelpText"></p>
-    </details>
+  </section>
+  <section class="sheet" id="vInteract" data-parent="pGuide" aria-labelledby="hInteract" hidden>
+    <h2 class="sheet-title" id="hInteract" tabindex="-1">관객의 상호작용</h2>
+    <div id="interactPanel" class="list-wrap">
+      <p class="lead" id="interactLead">관람객 열세 명이 누워 거울 속에 ‘태양’을 쓰고 있습니다. 받침 ㅇ의 오른쪽 반쪽(붉은 점선)이 비어 있어요. 빈 자리로 가서 <b>C 웅크리기</b>로 누운 뒤, 둥근 등이 태양 쪽을 향하게 몸을 돌리세요.</p>
+      <p class="lead" id="interactStatus" role="status" aria-live="off">빈 자리를 찾아보세요.</p>
+      <div class="list">
+        <button id="slotGoBtn" type="button" aria-keyshortcuts="O" data-key="O">빈 자리로 걸어가기</button>
+        <button id="letterListen" class="ghost" type="button">거울 속 글자 듣기</button>
+        <button id="slotCheckBtn" class="ghost" type="button">맞게 누웠는지 확인</button>
+        <button id="interactEnd" class="ghost" type="button">글자 만들기 끝내기</button>
+      </div>
+    </div>
   </section>
 
-  <section class="sheet" id="pLearn" aria-labelledby="hLearn" hidden>
-    <h2 class="sheet-title" id="hLearn">작품 이해</h2>
-    <p class="lead">태양·거울·안개가 어떻게 만들어졌는지 알아보고, 숨겨진 구조를 찾아봅니다.</p>
-    <div class="tools">
+  <section class="sheet" id="pLearn" data-parent="pMore" aria-labelledby="hLearn" hidden>
+    <h2 class="sheet-title" id="hLearn" tabindex="-1">작품 이해</h2>
+    <div class="list">
       <button id="mirrorBtn" class="ghost" type="button" aria-keyshortcuts="V" data-key="V">천장 거울의 원리</button>
       <button id="meaningBtn" class="ghost" type="button" aria-keyshortcuts="K" data-key="K">태양·안개 소리의 의미</button>
       <button id="trussBtn" class="ghost" type="button" aria-pressed="false" aria-keyshortcuts="T" data-key="T">거울 뒤 구조 보기</button>
@@ -338,89 +425,104 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
     </div>
   </section>
 
-  <section class="sheet" id="pMove" aria-labelledby="hMove" hidden>
-    <h2 class="sheet-title" id="hMove">이동</h2>
-    <p class="lead">원하는 곳으로 바로 가거나, 멈추거나, 방금 한 이동·눕기를 되돌립니다.</p>
-    <div class="tools">
-      <button id="sunBtn" class="ghost" type="button" aria-keyshortcuts="G" data-key="G">태양 아래로 걸어가기</button>
-      <button id="homeBtn" class="ghost" type="button" aria-keyshortcuts="Home 0" data-key="0">시작 위치로</button>
-      <button id="haltBtn" class="ghost" type="button" aria-keyshortcuts="X" data-key="X">이동 멈추기</button>
-      <button id="undoBtn" class="ghost" type="button" aria-keyshortcuts="U Backspace" data-key="U">되돌리기</button>
+  <section class="sheet" id="pSense" data-parent="pMore" aria-labelledby="hSense" hidden>
+    <h2 class="sheet-title" id="hSense" tabindex="-1">감각 확장</h2>
+    <div class="list">
+      <button id="senseToggle" class="ghost" type="button" aria-pressed="true" aria-describedby="dSense">감각의 울림 · 켜짐</button>
+      <button id="windToggle" class="ghost" type="button" aria-pressed="true" aria-describedby="dWind">보이지 않는 바람 · 켜짐</button>
+      <button id="togetherToggle" class="ghost" type="button" aria-pressed="true" aria-describedby="dTogether">함께 만드는 빛 · 켜짐</button>
+      <button id="nearbyBtn" class="ghost" type="button" aria-keyshortcuts="N" data-key="N">주변 관람객 듣기</button>
+      <button id="micToggle" class="ghost" type="button" aria-pressed="false" aria-describedby="dMic">마이크에 숨 불기 · 꺼짐</button>
     </div>
+    <span class="sr" id="dSense">태양까지의 거리를 한 번, 두 번, 세 번의 울림으로 전합니다. 진동을 쓸 수 없으면 같은 리듬의 소리가 납니다.</span>
+    <span class="sr" id="dWind">공기가 왼쪽에서 오른쪽으로 흐르고, 걷거나 안개를 피우면 바람이 세집니다.</span>
+    <span class="sr" id="dTogether">관람객과 가까워지면 연결음이 나고 거울 속에서 빛으로 이어집니다.</span>
+    <span class="sr" id="dMic">마이크에 후─ 하고 길게 불면 부는 동안 안개가 피어납니다. 마이크 권한을 묻고, 소리는 기기 밖으로 보내지 않습니다.</span>
+    <div id="sensoryStatus" class="sensory-status" role="status" aria-live="off">감각 기능이 모두 켜져 있습니다.</div>
   </section>
 
-  <section class="sheet" id="pSense" aria-labelledby="hSense" hidden>
-    <h2 class="sheet-title" id="hSense">감각 확장</h2>
-    <p class="lead">울림, 바람, 관람객과 이어지는 빛을 원하는 대로 켜고 끌 수 있습니다.</p>
-    <ul class="feature-list" role="list">
-      <li><button id="senseToggle" class="ghost" aria-pressed="false">감각의 울림 · 꺼짐</button>
-        <span>태양까지의 거리를 한 번, 두 번, 세 번의 울림으로 느껴 보세요. 진동을 쓸 수 없으면 같은 리듬의 소리가 납니다.</span>
-        <button id="sensePreview" class="ghost small" type="button">지금 리듬 느껴보기</button></li>
-      <li><button id="windToggle" class="ghost" aria-pressed="false">보이지 않는 바람 · 꺼짐</button>
-        <span>공기가 왼쪽에서 오른쪽으로 흐릅니다. 걷거나 숨을 불어넣으면 바람 소리와 흐름선이 강해집니다.</span></li>
-      <li><button id="togetherToggle" class="ghost" aria-pressed="false">함께 만드는 빛 · 꺼짐</button>
-        <span>다른 관람객과 가까워지면 거울 속에서 빛으로 연결되고 태양의 후광이 넓어집니다. 연결음과 안내로 주변 관람객의 수와 방향을 알 수 있습니다.</span>
-        <button id="nearbyBtn" class="ghost small" type="button" aria-keyshortcuts="N" data-key="N">주변 관람객 듣기</button></li>
-    </ul>
-    <div id="sensoryStatus" class="sensory-status" role="status" aria-live="off">감각 기능이 모두 꺼져 있습니다.</div>
-  </section>
-
-  <section class="sheet" id="pSet" aria-labelledby="hSet" hidden>
-    <h2 class="sheet-title" id="hSet">설정</h2>
+  <section class="sheet" id="pSet" data-parent="pMore" aria-labelledby="hSet" hidden>
+    <h2 class="sheet-title" id="hSet" tabindex="-1">설정</h2>
+    <div class="list">
+      <button id="modeBtn" class="ghost" type="button" aria-keyshortcuts="M" data-key="M">감상 모드 · 일반</button>
+      <button class="ghost go" type="button" data-open="vSound">소리 크기<small>배경음 · 효과음 · 음성 · 음소거</small></button>
+      <button class="ghost go" type="button" data-open="vVoice">음성 안내 방식<small>빠르기 · 자동 안내 · 내장 음성</small></button>
+    </div>
     <div class="settings">
-      <fieldset class="group">
-        <legend>소리 크기</legend>
-        <label>배경음 (태양 소리·바람) <input id="volBg" type="range" min="0" max="100" step="5" value="70" aria-valuetext="70퍼센트"></label>
-        <label>효과음 (걸음·벽·연결음) <input id="volFx" type="range" min="0" max="100" step="5" value="80" aria-valuetext="80퍼센트"></label>
-        <label>음성 안내 <input id="volVoice" type="range" min="0" max="100" step="5" value="100" aria-valuetext="100퍼센트"></label>
-        <label>음성 속도 <input id="rateVoice" type="range" min="0.7" max="1.6" step="0.1" value="1.1" aria-valuetext="보통보다 조금 빠르게"></label>
-      </fieldset>
       <fieldset class="group radios">
-        <legend>보기</legend>
-        <label><input type="radio" name="fontSize" value="0" checked> 글자 보통</label>
-        <label><input type="radio" name="fontSize" value="1"> 글자 크게</label>
-        <label><input type="radio" name="fontSize" value="2"> 글자 아주 크게</label>
-        <label class="check"><input id="hcChk" type="checkbox"> 고대비 <small>검정 바탕 · 흰 글씨 · 노랑 강조</small></label>
+        <legend>글자 크기</legend>
+        <label><input type="radio" name="fontSize" value="0" checked> 보통</label>
+        <label><input type="radio" name="fontSize" value="1"> 크게</label>
+        <label><input type="radio" name="fontSize" value="2"> 아주 크게</label>
       </fieldset>
-      <div class="group-col">
-        <fieldset class="group radios">
-          <legend>자동 안내 <span class="kbdhint" aria-hidden="true">F</span></legend>
-          <label><input type="radio" name="verbosity" value="off"> 끄기 <small>내 조작에 대한 대답만</small></label>
-          <label><input type="radio" name="verbosity" value="major"> 주요 이벤트만 <small>도착·벽·구역·연결</small></label>
-          <label><input type="radio" name="verbosity" value="detail" checked> 상세 <small>걸음마다 위치까지</small></label>
-        </fieldset>
-        <fieldset class="group">
-          <legend>소리와 음성</legend>
-          <div class="tools">
-            <button id="muteBtn" class="ghost" type="button" aria-pressed="false" aria-keyshortcuts="Q" data-key="Q">전체 음소거</button>
-            <button id="ttsBtn" class="ghost" type="button" aria-pressed="true">내장 음성 켜짐</button>
-          </div>
-          <label class="check"><input id="stereoChk" type="checkbox" checked> 좌우(스테레오) 소리 사용 <small>끄면 방향을 말로만 안내</small></label>
-          <p class="note">화면 읽기 모드에서는 내장 음성이 꺼집니다. 일반 모드로 돌아오면 이전의 내장 음성 설정을 다시 사용합니다.</p>
-          <button id="deviceBtn" class="ghost small" type="button" aria-keyshortcuts="C" data-key="C">이 기기에서 되는 기능 확인</button>
-        </fieldset>
-      </div>
+      <label class="check"><input id="hcChk" type="checkbox"> 고대비 <small>검정 바탕 · 흰 글씨 · 노랑 강조</small></label>
+    </div>
+  </section>
+  <section class="sheet" id="vSound" data-parent="pSet" aria-labelledby="hSound" hidden>
+    <h2 class="sheet-title" id="hSound" tabindex="-1">소리 크기</h2>
+    <div class="settings">
+      <label>배경음 (태양 소리·바람) <input id="volBg" type="range" min="0" max="100" step="5" value="70" aria-valuetext="70퍼센트"></label>
+      <label>효과음 (걸음·벽·연결음) <input id="volFx" type="range" min="0" max="100" step="5" value="80" aria-valuetext="80퍼센트"></label>
+      <label>음성 안내 <input id="volVoice" type="range" min="0" max="100" step="5" value="100" aria-valuetext="100퍼센트"></label>
+      <label class="check"><input id="stereoChk" type="checkbox" checked> 좌우(스테레오) 소리 <small>끄면 방향을 말로만 안내</small></label>
+      <button id="muteBtn" class="ghost" type="button" aria-pressed="false" aria-keyshortcuts="Q" data-key="Q">전체 음소거</button>
+    </div>
+  </section>
+  <section class="sheet" id="vVoice" data-parent="pSet" aria-labelledby="hVoice" hidden>
+    <h2 class="sheet-title" id="hVoice" tabindex="-1">음성 안내 방식</h2>
+    <div class="settings">
+      <label>음성 속도 <input id="rateVoice" type="range" min="0.7" max="1.6" step="0.1" value="1.1" aria-valuetext="보통보다 조금 빠르게"></label>
+      <fieldset class="group radios">
+        <legend>자동 안내 <span class="kbdhint" aria-hidden="true">F</span></legend>
+        <label><input type="radio" name="verbosity" value="off"> 끄기 <small>내 조작에 대한 대답만</small></label>
+        <label><input type="radio" name="verbosity" value="major"> 주요 이벤트만</label>
+        <label><input type="radio" name="verbosity" value="detail" checked> 상세 <small>걸음마다 위치까지</small></label>
+      </fieldset>
+      <button id="ttsBtn" class="ghost" type="button" aria-pressed="true">내장 음성 켜짐</button>
+      <p class="note">화면 읽기 모드에서는 내장 음성이 꺼집니다.</p>
     </div>
   </section>
 
-  <section class="notes">
-    <div>
-      <h2>처음이라면</h2>
+  <section class="sheet" id="pHelp" data-parent="pMore" aria-labelledby="hHelp" hidden>
+    <h2 class="sheet-title" id="hHelp" tabindex="-1">도움말</h2>
+    <div class="list">
+      <button id="startBtn" class="ghost" type="button" aria-haspopup="dialog">처음 화면 · 감상 방식 고르기</button>
+      <button id="helpBtn" class="ghost" type="button" aria-keyshortcuts="H" data-key="H">조작법 듣기</button>
+      <button id="keysBtn" class="ghost" type="button" aria-keyshortcuts="?" aria-haspopup="dialog" data-key="?">단축키 보기</button>
+      <button id="deviceBtn" class="ghost" type="button" aria-keyshortcuts="C" data-key="C">이 기기에서 되는 기능 확인</button>
+    </div>
+    <details class="about">
+      <summary>처음이라면 · 작품 소개 읽기</summary>
       <ol class="steps">
-        <li><strong>걸어 보세요.</strong> 홀 바닥을 누르거나 방향키 <kbd>↑</kbd>로 태양 쪽으로 다가갑니다. 끌면서 걸으면 빛 자국이 남습니다.</li>
-        <li><strong>숨을 불어 보세요.</strong> ‘숨 불어넣기’를 꾹 누르면 안개가 짙어지고 태양이 번집니다.</li>
-        <li><strong>누워서 위를 보세요.</strong> ‘바닥에 눕기’를 누르고 위쪽 천장 거울 속 내 모습(고리 표시)을 찾아보세요.</li>
-        <li><strong>태양 바로 아래까지</strong> 가면 빛의 구조가 드러납니다. ‘작품 이해’에서 거울 뒤편도 살펴볼 수 있습니다.</li>
-        <li><strong>글자를 완성해 보세요.</strong> 거울 속 ‘태양’ 글자에 한 사람 자리가 비어 있습니다. 그 자리에 C자로 웅크려 누우면 완성됩니다. 방법은 ‘감상 단계 → 4 관객의 상호작용’에 있어요.</li>
+        <li><strong>걷기</strong> · 홀 바닥을 누르거나 ‘걷기’로 태양에 다가갑니다.</li>
+        <li><strong>안개 피우기</strong> · 한 번 누르면 안개가 짙어지고, 다시 누르면 멈춥니다.</li>
+        <li><strong>바닥에 눕기</strong> · 누워서 천장 거울 속 내 모습(고리)을 찾아보세요.</li>
+        <li><strong>글자 완성</strong> · 감상 안내 → 관객의 상호작용에서 거울 속 ‘태양’ 글자의 빈 자리를 채웁니다.</li>
       </ol>
-      <p class="note">음성 안내나 화면 읽기로 감상하려면 맨 위 <strong>처음 화면</strong>에서 감상 방식을 고르세요.</p>
-    </div>
-    <div>
-      <h2>작품에 대해</h2>
-      <p>2003년 테이트 모던 터빈 홀(길이 약 155m)에는 반원형 램프와 천장 거울, 인공 안개로 만든 태양이 떠 있었습니다. 관람객은 바닥에 눕고, 손을 흔들고, 몸으로 글자를 만들어 거울에 비춰 보았습니다. 이곳에서는 걷거나 숨을 불어넣으며 그 공간을 탐색할 수 있습니다. 가상 관람객 여섯 명이 함께 걷고, ‘관객의 상호작용’을 열면 열세 명이 바닥에 누워 몸으로 거울 속 글자를 씁니다. 공동 감상이 지원되는 공유 환경에서는 접속한 관람객도 거울에 비칩니다.</p>
+      <p>올라퍼 엘리아슨의 《The Weather Project》(2003, 테이트 모던)를 재해석한 웹 작품입니다. 길이 약 155m의 터빈 홀에 반원형 램프와 천장 거울, 인공 안개로 태양을 만들었고, 관람객은 바닥에 누워 몸으로 글자를 만들어 거울에 비춰 보았습니다.</p>
       <p class="note">감각 확장에 참고한 전시 · 헨리 무어 인스티튜트, 도큐멘타, teamLab</p>
-    </div>
+      <p id="introText" hidden></p><p id="keyHelpText" hidden></p>
+    </details>
   </section>
+</div>
+
+<footer class="dock" id="dock" aria-label="감상 조작">
+  <div class="dock-in">
+    <div class="status" id="status"><b id="statusDistance"></b><span id="statusDetails"></span></div>
+    <div class="controls" role="group" aria-label="핵심 조작">
+      <button id="walkBtn" class="ghost" type="button" aria-expanded="false" aria-controls="sWalk" data-icon="⇡" data-root="sWalk">걷기</button>
+      <button id="breath" class="ghost" type="button" aria-pressed="false" aria-describedby="breathHint" aria-keyshortcuts="Space B" data-key="Space" data-icon="≋">안개 피우기</button>
+      <button id="lie" class="ghost" type="button" aria-expanded="false" aria-controls="sPose" aria-keyshortcuts="L" data-key="L" data-icon="⏚" data-root="sPose">바닥에 눕기</button>
+      <button id="listenBtn" class="ghost" type="button" aria-expanded="false" aria-controls="sListen" data-icon="♪" data-root="sListen">듣기</button>
+      <button id="moreBtn" class="ghost" type="button" aria-expanded="false" aria-controls="pMore" data-icon="☰" data-root="pMore">더보기</button>
+    </div>
+    <span id="breathHint" class="sr">한 번 누르면 안개가 피어나기 시작하고, 다시 누르면 멈춥니다. 안개가 짙을수록 태양이 번지고 소리가 먹먹해집니다.</span>
+  </div>
+</footer>
+<div id="stash" hidden>
+  <button id="rateBtn" type="button" tabindex="-1">빠르기</button>
+  <button id="sensePreview" type="button" tabindex="-1">리듬</button>
+  <div id="spotBtns"></div>
 </div>
 
 <dialog class="mode keys" id="keysDialog" aria-labelledby="keysTitle">
@@ -429,8 +531,8 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
   <div class="keygrid">
     <section><h3>걷고 느끼기</h3><dl>
       <dt><kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd></dt><dd>한 걸음 이동 (약 9m)</dd>
-      <dt><kbd>Space</kbd></dt><dd>누르는 동안 숨 불기</dd>
-      <dt><kbd>B</kbd></dt><dd>3초 동안 숨 불기</dd>
+      <dt><kbd>Space</kbd></dt><dd>안개 피우기 · 멈추기</dd>
+      <dt><kbd>B</kbd></dt><dd>안개 피우기 · 멈추기</dd>
       <dt><kbd>L</kbd></dt><dd>눕기 / 일어서기</dd>
       <dt><kbd>A</kbd></dt><dd>누운 모양 바꾸기</dd>
       <dt><kbd>D</kbd></dt><dd>누운 몸 45도 돌리기</dd>
@@ -510,17 +612,49 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
   let camera;
   function resize(){
     dpr = Math.min(2, window.devicePixelRatio || 1);
-    const w = mirror.parentElement.clientWidth;
-    MW = w; MH = Math.round(Math.max(130, Math.min(300, w*0.27)));
-    HW = w; HH = Math.round(Math.max(280, Math.min(600, w*0.6)));
+    // 무대(거울+홀)가 머리글과 고정 푸터 사이 한 화면에 들어오도록 높이를 맞춘다.
+    const stageEl = document.querySelector('.stage');
+    let w = Math.max(200, stageEl.clientWidth - 2);
+    let mh = Math.max(130, Math.min(300, w*0.27)), hh = Math.max(280, Math.min(600, w*0.6));
+    const dockEl = document.getElementById('dock');
+    const dockH = dockEl ? dockEl.offsetHeight : 0;
+    const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    const top = stageEl.getBoundingClientRect().top + window.scrollY;
+    const avail = vh - top - dockH - 4 /*panel 테두리*/ - 6 /*간격*/ - 10;
+    if (mh + hh > avail) {
+      const k = Math.max(0, avail) / (mh + hh);
+      mh = Math.max(80, mh*k); hh = Math.max(170, hh*k);
+    }
+    else if (avail - mh > hh) {
+      // 남는 높이는 홀에 나눠 화면을 꽉 채운다 (세로로 너무 길어지지 않게 제한)
+      const extra = avail - mh - hh;
+      mh = Math.min(mh + extra*0.25, Math.max(mh, w*0.42));
+      hh = Math.min(avail - mh, Math.max(hh, w*1.05), 640);
+    }
+    // 홀이 지나치게 납작해지지 않도록 너비를 줄여 가운데 둔다.
+    w = Math.round(Math.min(w, hh*2.1));
+    for (const p of document.querySelectorAll('.stage .panel')) p.style.width = (w + 2) + 'px';
+    MW = w; MH = Math.round(mh);
+    HW = w; HH = Math.round(hh);
     const f = 0.5228*HH, s1 = f/(1+D);
     camera = { f, hy: 0.447*HH, kx: (0.215*HH)/s1, cx: HW/2 };
     for (const [c, W, H] of [[mirror, MW, MH], [hall, HW, HH]]) {
       c.width = W*dpr; c.height = H*dpr; c.style.height = H + 'px';
     }
   }
+  const dockEl = document.getElementById('dock');
+  function syncDock(){ document.documentElement.style.setProperty('--dock-h', dockEl.offsetHeight + 'px'); }
+  syncDock();
   addEventListener('resize', resize); resize();
-
+  if (window.visualViewport) visualViewport.addEventListener('resize', resize);
+  if ('ResizeObserver' in window) {
+    let lastDockH = dockEl.offsetHeight;
+    new ResizeObserver(() => {
+      syncDock();
+      if (dockEl.offsetHeight !== lastDockH) { lastDockH = dockEl.offsetHeight; resize(); }
+    }).observe(dockEl);
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { syncDock(); resize(); });
   // 거울 좌표에서 태양은 오른쪽에 있다.
   const MP = 14;
   const m2s = (x, z) => [MP + z*(MW-2*MP), MH/2 + x*(MH/2-MP)];
@@ -730,44 +864,77 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
   }
 
   const breathBtn = document.getElementById('breath');
-  // 숨: 포인터는 누르는 동안, 키보드(Space/Enter)는 누르는 동안, 스크린리더 클릭·B 키는 약 3초
-  let breathPulseTimer = null, fogWasThick = false;
+  // 안개 피우기: 한 번 누르면 켜지고 다시 누르면 꺼지는 토글.
+  // 누르고 있기·길게 누르기는 화면 읽기 프로그램(VoiceOver·TalkBack)에서 하기 어려워 쓰지 않는다.
+  let fogMachine = false, micBlowing = false, fogWasThick = false, fogMaxAnnounced = false;
   function fogWord(){ return fog > 0.7 ? '아주 짙음' : fog > 0.45 ? '짙음' : '옅음'; }
   function setBreathing(v){
     if (breathing === v) return;
     breathing = v;
     whoosh(v);
-    if (v) feedback('안개가 짙어집니다.' + (sensory.air ? ' 바람도 강해집니다.' : ''), { level: 'detail' });
-    else {
-      cancelBreathPulse();
-      markJourney('breath');
-      feedback('숨을 멈췄습니다. 안개가 서서히 걷힙니다.');
+    if (!v) markJourney('breath');
+  }
+  const syncBreathing = () => setBreathing(fogMachine || micBlowing);
+  function setFogMachine(v){
+    if (fogMachine === v) return;
+    fogMachine = v; fogMaxAnnounced = false;
+    breathBtn.setAttribute('aria-pressed', String(v));
+    syncBreathing();
+    if (v) {
+      tone(392, 0.22, { gain: 0.06, slide: 1.5 });
+      buzz([30]);
+      feedback('안개를 피웁니다. 태양이 점점 번지고 소리가 먹먹해집니다. 멈추려면 안개 피우기를 다시 누르세요.' + (sensory.air ? ' 바람도 강해집니다.' : ''), { level: 'state' });
+    } else {
+      tone(587, 0.22, { gain: 0.06, slide: 0.66 });
+      buzz([15, 60, 15]);
+      feedback(`안개를 멈췄습니다. 지금 안개가 ${fog > 0.7 ? '아주 짙고' : fog > 0.45 ? '짙고' : '옅고'}, 서서히 걷힙니다.`, { level: 'state' });
     }
   }
-  function cancelBreathPulse(){
-    clearTimeout(breathPulseTimer);
-    breathPulseTimer = null;
+  const toggleFog = () => setFogMachine(!fogMachine);
+  breathBtn.addEventListener('click', toggleFog);
+  // 선택 기능: 마이크에 숨을 불면 부는 동안 안개가 피어남 (원작의 '숨'을 몸으로 잇는 방식)
+  let mic = null;
+  const micBtn = document.getElementById('micToggle');
+  function syncMicBtn(){ micBtn.setAttribute('aria-pressed', String(!!mic)); micBtn.textContent = `마이크에 숨 불기 · ${mic ? '켜짐' : '꺼짐'}`; }
+  async function setMic(v){
+    if (v && !mic) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+        const c = fxCtx(); if (!c) throw new Error('audio');
+        const src = c.createMediaStreamSource(stream);
+        const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 600;
+        const an = c.createAnalyser(); an.fftSize = 1024;
+        src.connect(lp); lp.connect(an);
+        mic = { stream, an, buf: new Float32Array(an.fftSize), above: 0, below: 0, last: performance.now() };
+        syncMicBtn();
+        feedback('마이크 숨 감지를 켰습니다. 마이크에 대고 후─ 하고 길게 불면, 부는 동안 안개가 피어납니다.', { level: 'state' });
+      } catch (e) {
+        mic = null; syncMicBtn();
+        feedback('이 기기나 브라우저에서는 마이크를 쓸 수 없습니다. 권한을 허용했는지 확인하거나 안개 피우기 단추를 사용하세요.', { auto: false });
+      }
+    } else if (!v && mic) {
+      mic.stream.getTracks().forEach(t => t.stop()); mic = null;
+      if (micBlowing) { micBlowing = false; syncBreathing(); }
+      syncMicBtn();
+      feedback('마이크 숨 감지를 껐습니다.', { level: 'state' });
+    }
   }
-  function breathPulse(){
-    cancelBreathPulse();
-    setBreathing(true);
-    breathPulseTimer = setTimeout(() => setBreathing(false), 3000);
+  micBtn.addEventListener('click', () => setMic(!mic));
+  function updateMic(now){
+    if (!mic) return;
+    const dt = Math.min(100, now - mic.last); mic.last = now;
+    mic.an.getFloatTimeDomainData(mic.buf);
+    let sum = 0; for (const x of mic.buf) sum += x*x;
+    const rms = Math.sqrt(sum / mic.buf.length);
+    if (rms > 0.05) { mic.above += dt; mic.below = 0; } else { mic.below += dt; mic.above = 0; }
+    if (!micBlowing && mic.above > 200) { micBlowing = true; syncBreathing(); buzz([20]); }
+    else if (micBlowing && mic.below > 400) { micBlowing = false; syncBreathing(); }
   }
-  function startBreath(){ cancelBreathPulse(); setBreathing(true); }
-  function stopBreath(){ if (breathPulseTimer === null) setBreathing(false); }
-  breathBtn.addEventListener('pointerdown', e => { e.preventDefault(); startBreath(); });
-  ['pointerup','pointerleave','pointercancel'].forEach(t => breathBtn.addEventListener(t, stopBreath));
-  breathBtn.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); if (!e.repeat) startBreath(); } });
-  breathBtn.addEventListener('keyup', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); setBreathing(false); } });
-  // 스크린리더의 가상 클릭(detail 0)은 누르고 있을 수 없으므로 짧은 숨으로 처리
-  breathBtn.addEventListener('click', e => { if (e.detail === 0) breathPulse(); });
-  addEventListener('blur', () => { if (breathing) setBreathing(false); });
 
   const lieBtn = document.getElementById('lie');
   function setLying(v){
     me.lying = v; me.tx = me.x; me.tz = me.z;
-    lieBtn.setAttribute('aria-pressed', String(v));
-    lieBtn.textContent = v ? '일어서기' : '바닥에 눕기';
+    syncLieBtn();
     syncPoseUI();
     sfx.lie(v);
     if (v) markJourney('lie');
@@ -777,7 +944,17 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
       : '일어섰습니다.', { level: 'state' });
   }
   function userToggleLie(){ pushHistory(me.lying ? '일어서기' : '눕기'); setLying(!me.lying); }
-  lieBtn.addEventListener('click', userToggleLie);
+  function syncLieBtn(){
+    lieBtn.textContent = me.lying ? '누운 자세' : '바닥에 눕기';
+    lieBtn.dataset.lying = me.lying ? '1' : '';
+    lieBtn.setAttribute('aria-label', me.lying ? '누운 자세 바꾸기 (지금 누워 있음)' : '바닥에 눕기');
+  }
+  // 서 있을 때: 바로 눕고 '누운 자세' 창을 연다. 누워 있을 때: 자세 창을 열고 닫는다.
+  lieBtn.addEventListener('click', e => {
+    if (!me.lying) { userToggleLie(); openSheet('sPose', { focus: e.detail === 0 }); }
+    else toggleRoot('sPose', e);
+  });
+  document.getElementById('standBtn').addEventListener('click', () => { if (me.lying) userToggleLie(); closeSheets(true); });
 
   // 한 걸음 이동과 벽 감지
   const STEP = 0.06, XLIM = 0.97;
@@ -812,7 +989,7 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (tour && ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Home','Backspace',' '].includes(e.key)) cancelTour();
     const free = t === document.body || t === hall || t === mirror;
-    if (e.key === ' ' && free) { e.preventDefault(); if (!e.repeat) startBreath(); }
+    if (e.key === ' ' && free) { e.preventDefault(); if (!e.repeat) toggleFog(); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); keyMove(0, STEP); }
     else if (e.key === 'ArrowDown') { e.preventDefault(); keyMove(0, -STEP); }
     else if (e.key === 'ArrowLeft') { e.preventDefault(); keyMove(-STEP, 0); }
@@ -841,7 +1018,7 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
         s: speakStatus, ㄴ: speakStatus,
         t: toggleTruss, ㅅ: toggleTruss,
         g: goToSun, ㅎ: goToSun,
-        b: breathPulse, ㅠ: breathPulse,
+        b: toggleFog, ㅠ: toggleFog,
         p: speakJourney, ㅔ: speakJourney,
         v: () => speakFocus(1), ㅍ: () => speakFocus(1),
         e: exploreTruss, ㄷ: exploreTruss,
@@ -855,17 +1032,13 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
       if (map[k]) { if (tour) stopSpeech(); e.preventDefault(); map[k](); }
     }
   });
-  addEventListener('keyup', e => {
-    const t = e.target;
-    if (e.key === ' ' && (t === document.body || t === hall || t === mirror)) setBreathing(false);
-  });
 
   // 공간 음향과 진동
   const soundBtn = document.getElementById('sound');
   function setSound(v, tell = true){
     soundOn = v;
     soundBtn.setAttribute('aria-pressed', String(soundOn));
-    soundBtn.textContent = soundOn ? '소리 끄기' : '소리로 감상하기';
+    soundBtn.textContent = soundOn ? '소리 끄기' : '소리 켜기';
     if (soundOn) startAudio(); else stopAudio();
     if (tell) feedback(soundOn ? '소리 감상을 켰습니다. 태양에 가까워질수록 소리가 높고 커지며, 홀의 왼쪽에 있으면 왼쪽 귀, 오른쪽에 있으면 오른쪽 귀에서 더 크게 들립니다.' : '소리를 껐습니다.', { level: 'state' });
   }
@@ -904,7 +1077,9 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
   let lastBuzz = 0;
 
   // 감각 확장
-  const sensory = { sense: false, air: false, together: false };
+  const sensory = { sense: true, air: true, together: true };   // 기본으로 모두 켬
+  // 일반 감상에서는 '소리' 단추를 켰을 때만 감각 확장의 소리를 낸다 (시각 효과와 진동은 항상)
+  const sensoryAudible = () => isAssisted() || soundOn;
   const sensoryStatusEl = document.getElementById('sensoryStatus');
   const sensoryButtons = {
     sense: document.getElementById('senseToggle'),
@@ -930,12 +1105,12 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
       return;
     }
     if (name === 'sense') {
-      lastSense = 0;
+      lastSense = 0; setTimeout(senseSignal, 50);
       feedback('감각의 울림을 켰습니다. 태양에 가까워질수록 한 번에서 세 번까지 울립니다. ' +
         (canVibrate ? '휴대폰 진동으로 약 2초마다 전합니다.' : '이 기기는 진동을 지원하지 않아, 같은 리듬을 짧은 소리로 약 2초마다 들려 드립니다. 태양에 가까울수록 소리도 높아집니다.') +
         ` 지금은 ${['한 번', '두 번', '세 번'][zoneOf(me.z)]} 울립니다.`, { level: 'state' });
     } else if (name === 'air') {
-      feedback('보이지 않는 바람을 켰습니다. 공기가 왼쪽에서 오른쪽으로 흐릅니다. 걷거나 숨을 불어넣으면 바람이 세집니다.' +
+      feedback('보이지 않는 바람을 켰습니다. 공기가 왼쪽에서 오른쪽으로 흐릅니다. 걷거나 안개를 피우면 바람이 세집니다.' +
         (stereoOn && hasStereo ? '' : ' 지금은 좌우 소리를 쓸 수 없어, 바람의 흐름은 소리가 커졌다 작아지는 물결로만 들립니다.'), { level: 'state' });
     } else {
       nearIds = new Set(findNearbyPeople(buildPeople()).map(p => p.id));
@@ -952,7 +1127,7 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
       t += Math.max(ms, i % 2 === 0 ? 70 : ms);
     });
   }
-  function senseSignal(){ const pat = distanceRhythm(); if (canVibrate) buzz(pat); else rhythmTones(pat); }
+  function senseSignal(){ const pat = distanceRhythm(); if (canVibrate) buzz(pat); else if (sensoryAudible()) rhythmTones(pat); }
   // 실제 촉각은 기기/브라우저 지원 여부에 달려 있으므로, 지원되지 않으면 같은 리듬을 소리로 들려줍니다.
   let hapticNotice = '';
   document.getElementById('sensePreview').addEventListener('click', () => {
@@ -991,6 +1166,7 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
     const joined = near.filter(p => !nearIds.has(p.id));
     const leftCount = [...nearIds].filter(id => !ids.has(id)).length;
     nearIds = ids;
+    if (!sensoryAudible()) return;
     joined.forEach((p, i) => {
       const pan = clamp((p.x - me.x)*1.6, -1, 1);
       tone(784, 0.18, { force: true, gain: 0.08, pan, when: i*0.15 });
@@ -1015,7 +1191,7 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
   let wind = null, windPhase = 0, windLast = 0;
   function updateWind(now){
     const dt = windLast ? Math.min(0.1, (now - windLast)/1000) : 0; windLast = now;
-    if (!sensory.air) { if (wind && wind.on) { wind.on = false; wind.g.gain.setTargetAtTime(0, wind.c.currentTime, 0.3); } return; }
+    if (!sensory.air || !sensoryAudible()) { if (wind && wind.on) { wind.on = false; wind.g.gain.setTargetAtTime(0, wind.c.currentTime, 0.3); } return; }
     const c = fxCtx(); if (!c) return;
     if (!wind) {
       try {
@@ -1060,7 +1236,7 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
     }
     const details = [];
     if (sensory.sense) details.push('감각: ' + (me.z < 0.35 ? '먼 거리 · 짧은 울림' : me.z < 0.75 ? '중간 거리 · 두 번의 울림' : '태양 가까이 · 세 번의 울림'));
-    if (sensory.air) details.push('공기: ' + (breathing ? '숨결이 흐름을 키우는 중' : isWalking() ? '걸음이 바람을 일으키는 중' : '잔잔한 흐름'));
+    if (sensory.air) details.push('공기: ' + (breathing ? '안개가 흐름을 키우는 중' : isWalking() ? '걸음이 바람을 일으키는 중' : '잔잔한 흐름'));
     if (sensory.together) {
       const count = (near ?? findNearbyPeople(buildPeople())).length;
       details.push(`공동의 빛: 가까운 관람객 ${count}명`);
@@ -1236,18 +1412,18 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
     '홀에는 옅은 인공 안개가 떠다닙니다. 안개는 빛을 퍼뜨려 태양을 부드럽게 번지게 하고, 공간을 실제 날씨 속에 있는 것처럼 느끼게 합니다. ' +
     '태양, 거울, 안개는 모두 날씨를 흉내 낸 장치입니다. 작가는 우리가 늘 당연하게 느끼는 날씨와 빛을 어떻게 경험하는지 묻습니다. ' +
     '태양 바로 아래까지 걸어가면, 그리고 거울 뒤를 들여다보면, 무언가를 발견할 수 있습니다.';
-  const HELP = '조작법입니다. 위쪽 방향키는 태양 쪽으로, 아래쪽 방향키는 입구 쪽으로 한 걸음 걷습니다. 한 걸음은 약 9미터입니다. ' +
+  const HELP = '조작법입니다. 화면 아래에는 걷기, 안개 피우기, 바닥에 눕기, 듣기, 더보기 다섯 단추가 있고, 각 단추가 여는 창에는 단추가 다섯 개 이하입니다. 뒤로 단추나 Escape 키로 한 단계씩 돌아갑니다. 키보드에서는 위쪽 방향키는 태양 쪽으로, 아래쪽 방향키는 입구 쪽으로 한 걸음 걷습니다. 한 걸음은 약 9미터입니다. ' +
     '왼쪽과 오른쪽 방향키는 홀의 왼쪽 벽과 오른쪽 벽 쪽으로 걷습니다. 걸음을 멈추면 태양까지의 거리와 위치를 알려 드리고, 벽에 닿으면 둔탁한 소리가 납니다. ' +
-    '스페이스 바를 누르고 있으면 숨을 불어 안개가 짙어집니다. B 키는 3초 동안 짧게 숨을 붑니다. ' +
+    '스페이스 바나 B 키, 또는 안개 피우기 단추를 한 번 누르면 안개가 피어나고, 다시 누르면 멈춥니다. ' +
     'L 키는 바닥에 눕기와 일어서기입니다. A 키는 누운 모양을 일자, T자 팔 벌리기, Y자 만세, 큰 대자, C자 웅크리기 순서로 바꾸고, D 키는 누운 몸을 45도씩 돌립니다. 숫자 4는 관객의 상호작용, O 키는 태양 글자의 빈 자리로 걸어가기입니다. T 키는 거울 뒤 구조 보기, G 키는 태양 아래로 걸어가기입니다. ' +
     'S 키는 지금 상태 듣기, R 키는 마지막 안내 다시 듣기, P 키는 감상 기록 듣기입니다. ' +
     '숫자 1은 작품 전체 듣기, 2는 태양·거울·안개·관람객·홀을 하나씩 듣기, 3은 손끝 탐색 켜고 끄기, 마침표는 다음 탐색 지점입니다. 더하기와 빼기 키로 말 빠르기를 바꿉니다. ' +
     '손끝 탐색에서는 위치를 먼저 확인하고 이곳으로 이동 버튼을 눌러 걷습니다. 처음부터 안내받기 버튼을 누르면 전체 소개, 태양과 거울 감상, 직접 탐색으로 이어집니다. 내장 음성을 쓰면 해설이 끝날 때 다음으로 넘어갑니다. 화면 읽기 사용 중에는 다음으로 버튼으로 진행하세요. 잠시 멈추기나 안내 감상 끝내기 버튼으로 조절할 수 있습니다. ' +
     'W 키는 현재 위치 확인, X 키는 이동 멈추기, Home 키나 숫자 0은 시작 위치로 돌아가기, U 키나 백스페이스는 방금 한 이동이나 눕기를 되돌립니다. ' +
-    'Q 키는 전체 음소거, F 키는 자동 안내를 끄기, 주요 이벤트만, 상세 순서로 바꾸고, C 키는 이 기기에서 되는 기능과 대체 방법을 알려 줍니다. 소리 크기와 음성 속도는 화면 아래 설정에서 따로 조절할 수 있습니다. ' +
+    'Q 키는 전체 음소거, F 키는 자동 안내를 끄기, 주요 이벤트만, 상세 순서로 바꾸고, C 키는 이 기기에서 되는 기능과 대체 방법을 알려 줍니다. 소리 크기와 음성 속도는 더보기의 설정에서 조절할 수 있습니다. ' +
     'V 키는 천장 거울의 원리, E 키는 거울 뒤 구조를 한 부분씩 탐색, K 키는 태양과 안개 소리의 의미, N 키는 주변 관람객의 수와 방향을 알려 줍니다. ' +
-    'I 키는 작품 소개, H 키는 이 조작법, M 키는 감상 모드 바꾸기, Escape 키는 음성 멈추기입니다. ' +
-    '스크린리더를 쓰는 경우 터빈 홀 탐색 공간에 포커스를 두면 이 단축키들이 바로 동작합니다. 키보드가 없는 휴대폰에서는 화면의 걷기 버튼 네 개로 한 걸음씩 걷고, 다른 기능은 제목별로 묶인 버튼에서 찾을 수 있습니다. 모든 기능은 화면 아래 버튼으로도 쓸 수 있습니다.';
+    'I 키는 작품 소개, H 키는 이 조작법, M 키는 감상 모드 바꾸기, Escape 키는 음성 멈추기와 창 닫기입니다. ' +
+    '스크린리더를 쓰는 경우 터빈 홀 탐색 공간에 포커스를 두면 이 단축키들이 바로 동작합니다. 키보드가 없는 휴대폰에서는 걷기 단추를 눌러 네 방향으로 한 걸음씩 걷습니다. 모든 기능은 화면 아래 다섯 단추에서 찾을 수 있습니다.';
   document.getElementById('introText').textContent = INTRO;
   document.getElementById('keyHelpText').textContent = HELP;
   function playIntro(){ cancelTour(); feedback(INTRO + ' 다음 단계인 2 초점에서는 태양, 거울, 안개를 하나씩 들을 수 있습니다.', { auto: false }); }
@@ -1372,7 +1548,7 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
       (soundOn ? '' : '지금은 소리 감상이 꺼져 있어, 켜면 아래 변화를 직접 들을 수 있습니다. ') +
       `지금 배경음은 ${pitchWord()} 음입니다. 태양까지 약 ${d.dist}미터이기 때문입니다. 태양에 가까워질수록 음이 높고 커지는데, 실제 홀에서 태양에 다가갈수록 빛이 강해지고 눈부셔지는 것을 뜻합니다. ` +
       `소리가 ${me.x < -0.33 ? '왼쪽 귀에 치우친 것은 홀의 왼쪽 벽 가까이' : me.x > 0.33 ? '오른쪽 귀에 치우친 것은 홀의 오른쪽 벽 가까이' : '양쪽 귀에 고르게 들리는 것은 홀 한가운데'}에 있다는 뜻입니다. ` +
-      `지금 소리의 질감은 ${muffled ? '먹먹합니다' : '맑습니다'}. 안개가 ${fog > 0.7 ? '아주 짙기' : fog > 0.45 ? '짙기' : '옅기'} 때문입니다. 안개가 짙어지면 높은 소리가 깎여 먹먹해지는데, 짙은 안개가 빛을 사방으로 흩어 태양의 윤곽을 흐리게 만들고 홀 전체를 뿌연 빛으로 채우는 것을 소리로 표현한 것입니다. 숨을 불어 직접 바꿔 볼 수 있습니다. ` +
+      `지금 소리의 질감은 ${muffled ? '먹먹합니다' : '맑습니다'}. 안개가 ${fog > 0.7 ? '아주 짙기' : fog > 0.45 ? '짙기' : '옅기'} 때문입니다. 안개가 짙어지면 높은 소리가 깎여 먹먹해지는데, 짙은 안개가 빛을 사방으로 흩어 태양의 윤곽을 흐리게 만들고 홀 전체를 뿌연 빛으로 채우는 것을 소리로 표현한 것입니다. 안개 피우기로 직접 바꿔 볼 수 있습니다. ` +
       (me.lying ? '누워 있을 때 위쪽 울림이 낮아지는 것은 시선이 태양에서 천장 거울로 옮겨 갔다는 뜻입니다.' : '누우면 위쪽 울림이 한 단계 낮아집니다. 시선이 태양에서 거울로 옮겨 간다는 뜻입니다.'), { auto: false });
   }
   document.getElementById('meaningBtn').addEventListener('click', speakMeaning);
@@ -1411,7 +1587,7 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
 
   // 감상 기록과 감상 완료
   const journey = { sun: false, lie: false, breath: false, truss: false, letter: false };
-  const journeyNames = { sun: '태양 아래까지 걷기', lie: '바닥에 누워 거울 보기', breath: '숨으로 안개 만들기', truss: '거울 뒤 구조 발견하기', letter: '몸으로 태양 글자 완성하기' };
+  const journeyNames = { sun: '태양 아래까지 걷기', lie: '바닥에 누워 거울 보기', breath: '안개 피워 보기', truss: '거울 뒤 구조 발견하기', letter: '몸으로 태양 글자 완성하기' };
   const JOURNEY_TOTAL = Object.keys(journey).length;
   const journeyBtn = document.getElementById('journeyBtn');
   let journeyDone = false;
@@ -1451,15 +1627,20 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
     if (atSlot()) return '지금 빈 자리 바로 위에 있습니다.' + slotHint();
     return `빈 자리는 나의 ${relDir(SLOT)} 약 ${slotMeters()}미터에 있습니다. O 키나 ‘빈 자리로 걸어가기’로 바로 갈 수 있습니다.`;
   }
-  function setInteractOpen(v){ interactPanel.hidden = !v; interactBtn.setAttribute('aria-expanded', String(v)); setLetterOn(v); if (v) updateInteractStatus(); }
-  interactBtn.addEventListener('click', () => {
-    const open = interactPanel.hidden;
-    setInteractOpen(open);
-    feedback(open ? INTERACT_TEXT + ' ' + slotWhere() : '관객의 상호작용을 닫았습니다. 글자를 만들던 관람객들이 일어나 흩어졌습니다.', { auto: false });
+  function setInteractOpen(v){ setLetterOn(v); if (v) updateInteractStatus(); }
+  interactBtn.addEventListener('click', e => {
+    openSheet('vInteract', { focus: e.detail === 0 });
+    if (!letterOn) setInteractOpen(true);
+    feedback(INTERACT_TEXT + ' ' + slotWhere(), { auto: false });
+  });
+  document.getElementById('interactEnd').addEventListener('click', () => {
+    setInteractOpen(false);
+    feedback('관객의 상호작용을 마쳤습니다. 글자를 만들던 관람객들이 일어나 흩어졌습니다.', { auto: false });
+    openSheet('pGuide', { focus: true });
   });
   function openInteract(){
     cancelTour();
-    if (mode === 'visual') openPanel('pGuide');
+    openSheet('vInteract');
     setInteractOpen(true);
     feedback(INTERACT_TEXT + ' ' + slotWhere(), { auto: false });
   }
@@ -1521,48 +1702,96 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
     if (!soundOn && hasAudio) setSound(true, false);
     lastZone = zoneOf(me.z);
     setExploring(true, true);
-    const focusWalkTools = mode === 'reader' || matchMedia('(pointer: coarse)').matches;
-    const focusTarget = focusWalkTools ? document.getElementById('walkTitle') : hall;
-    focusTarget.focus();
+    document.getElementById('walkBtn').focus();
+    const PANEL = '화면 아래에 단추 다섯 개가 있습니다. 걷기, 안개 피우기, 바닥에 눕기, 듣기, 더보기입니다. 단추를 누르면 관련 창이 열리고, 각 창에는 단추가 다섯 개 이하입니다. 뒤로 단추나 Esc 키로 한 단계 돌아갑니다. ';
     const guide = mode === 'reader'
-      ? '화면 읽기 모드입니다. 제목별로 감상 도구를 찾을 수 있습니다. 손끝 탐색의 지점 버튼으로 위치를 확인하고 ‘이곳으로 이동’을 누르면 걷습니다. ‘처음부터 안내받기’를 선택하면 순서대로 감상할 수 있고, 해설을 읽은 뒤 ‘다음으로’를 누르면 이어집니다.'
-      : '음성 안내 모드입니다. 화면을 짚으면 먼저 위치를 소리로 확인합니다. 고른 위치로 가려면 ‘이곳으로 이동’을 누르세요. 방향키나 걷기 버튼으로도 이동할 수 있습니다. 순서대로 둘러보려면 ‘처음부터 안내받기’를 누르세요.';
+      ? '화면 읽기 모드입니다. ' + PANEL + '순서대로 감상하려면 더보기, 감상 안내, 안내 투어를 고르세요.'
+      : '음성 안내 모드입니다. ' + PANEL + '터빈 홀 화면을 짚으면 그 위치를 소리로 먼저 알려 줍니다. 고른 곳으로 가려면 감상 안내의 손끝 탐색에서 이곳으로 이동을 누르세요.';
     feedback([guide, deviceGaps(), welcome && mode === 'nonvisual' ? INTRO : ''].filter(Boolean).join(' '), { level: 'state' });
   }
   function toggleMode(){ setMode(nextModes[mode]); }
   modeBtn.addEventListener('click', toggleMode);
 
-  // 기능 묶음 펼치기: 한 번에 하나만 열림 (disclosure 패턴)
-  const menuBtns = [...document.querySelectorAll('.menu [aria-controls]')];
-  function openPanel(id){
-    menuBtns.forEach(b => {
-      const on = b.getAttribute('aria-controls') === id;
-      b.setAttribute('aria-expanded', String(on));
-      document.getElementById(b.getAttribute('aria-controls')).hidden = !on;
-    });
+  // ── 창(시트) 관리: 한 번에 한 창, 각 창의 탐색 요소는 5개 이하 ──
+  // 푸터 단추가 첫 창을 열고, 창 안의 '→' 항목은 하위 창을 연다. '← 뒤로'와 Esc는 한 단계 위로.
+  const sheets = [...document.querySelectorAll('.sheet')];
+  const rootBtns = [...document.querySelectorAll('.dock [data-root]')];
+  const moreBtn = document.getElementById('moreBtn');
+  let curSheet = null;
+  const sheetTitle = el => el.querySelector('.sheet-title').textContent;
+  function rootOf(id){ let el = document.getElementById(id); while (el && el.dataset.parent) el = document.getElementById(el.dataset.parent); return el && el.id; }
+  sheets.forEach(sh => {
+    const title = sh.querySelector('.sheet-title');
+    const head = document.createElement('div'); head.className = 'sheet-head';
+    title.before(head);
+    if (sh.dataset.parent) {
+      const back = document.createElement('button');
+      back.type = 'button'; back.className = 'ghost small sheet-back';
+      back.textContent = '←';
+      back.setAttribute('aria-label', `뒤로, ${sheetTitle(document.getElementById(sh.dataset.parent))}`);
+      back.addEventListener('click', e => openSheet(sh.dataset.parent, { focus: true }));
+      head.append(back);
+    }
+    head.append(title);
+    const close = document.createElement('button');
+    close.type = 'button'; close.className = 'ghost small sheet-close'; close.textContent = '✕';
+    close.setAttribute('aria-label', `${title.textContent} 닫기`);
+    close.addEventListener('click', () => closeSheets(true));
+    head.append(close);
+  });
+  function openSheet(id, { focus = false } = {}){
+    sheets.forEach(sh => { sh.hidden = sh.id !== id; });
+    curSheet = id;
+    const root = rootOf(id);
+    rootBtns.forEach(b => b.setAttribute('aria-expanded', String(b.dataset.root === root)));
+    if (focus || isAssisted()) document.getElementById(id).querySelector('.sheet-title').focus();
   }
-  menuBtns.forEach(b => b.addEventListener('click', () => {
-    openPanel(b.getAttribute('aria-expanded') === 'true' ? null : b.getAttribute('aria-controls'));
-  }));
-  // 걷기 버튼 (화면 터치·스크린리더 두 번 탭)
+  function closeSheets(returnFocus = false){
+    const root = curSheet && rootOf(curSheet);
+    const inside = curSheet && document.getElementById(curSheet).contains(document.activeElement);
+    sheets.forEach(sh => { sh.hidden = true; });
+    curSheet = null;
+    rootBtns.forEach(b => b.setAttribute('aria-expanded', 'false'));
+    if ((returnFocus || inside) && root) { const b = rootBtns.find(x => x.dataset.root === root); if (b) b.focus(); }
+  }
+  function toggleRoot(root, e){
+    if (curSheet && rootOf(curSheet) === root) closeSheets(e && e.detail === 0);
+    else openSheet(root, { focus: e && e.detail === 0 });
+  }
+  const openPanel = id => id ? openSheet(id) : closeSheets();
+  rootBtns.forEach(b => { if (b.id !== 'lie') b.addEventListener('click', e => toggleRoot(b.dataset.root, e)); });
+  document.querySelectorAll('.sheet [data-open]').forEach(b => b.addEventListener('click', e => openSheet(b.dataset.open, { focus: e.detail === 0 })));
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape' || !curSheet || document.querySelector('dialog[open]')) return;
+    const sh = document.getElementById(curSheet);
+    if (sh.dataset.parent) openSheet(sh.dataset.parent, { focus: true });
+    else closeSheets(true);
+  });
+  // 걷기 단추 (화면 터치·스크린리더 두 번 탭)
   [['stepUp', 0, STEP], ['stepDown', 0, -STEP], ['stepLeft', -STEP, 0], ['stepRight', STEP, 0]]
     .forEach(([id, dx, dz]) => document.getElementById(id).addEventListener('click', () => keyMove(dx, dz)));
-  // 비시각 모드: 접힌 메뉴 대신 모든 묶음을 제목과 함께 펼쳐 둠 (스크린리더 '제목 이동'으로 바로 찾기)
-  const dpadWrap = document.getElementById('dpadWrap'), menuNav = document.querySelector('.menu');
-  let lastOpenPanel = null;
-  function applyLayout(){
-    const assisted = isAssisted();
-    dpadWrap.hidden = !assisted;
-    menuNav.hidden = assisted;
-    if (assisted) {
-      lastOpenPanel = menuBtns.find(b => b.getAttribute('aria-expanded') === 'true')?.getAttribute('aria-controls') ?? null;
-      menuBtns.forEach(b => { document.getElementById(b.getAttribute('aria-controls')).hidden = false; });
-    } else openPanel(lastOpenPanel);
+  // 누운 모양: 하나의 탐색 요소(toolbar) — 방향키로 모양 사이 이동
+  const poseBar = document.getElementById('poseBar');
+  function syncPoseRoving(){
+    const bs = [...poseBar.querySelectorAll('button')];
+    const cur = bs.find(b => b.getAttribute('aria-pressed') === 'true') || bs[0];
+    bs.forEach(b => { b.tabIndex = b === cur ? 0 : -1; });
   }
-  document.getElementById('skipLink').addEventListener('click', e => {
-    if (dpadWrap.hidden) { e.preventDefault(); const t = document.getElementById('breath'); t.focus(); }
-    else { e.preventDefault(); document.getElementById('walkTitle').focus(); }
+  poseBar.addEventListener('keydown', e => {
+    const bs = [...poseBar.querySelectorAll('button')];
+    const i = bs.indexOf(document.activeElement); if (i < 0) return;
+    let n = null;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') n = (i + 1) % bs.length;
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') n = (i - 1 + bs.length) % bs.length;
+    else if (e.key === 'Home') n = 0; else if (e.key === 'End') n = bs.length - 1;
+    if (n === null) return;
+    e.preventDefault(); e.stopPropagation();
+    bs.forEach((b, k) => { b.tabIndex = k === n ? 0 : -1; });
+    bs[n].focus();
   });
+  new MutationObserver(syncPoseRoving).observe(poseBar, { attributes: true, subtree: true, attributeFilter: ['aria-pressed'] });
+  syncPoseRoving();
+  function applyLayout(){ closeSheets(); }
   // 단축키 창
   const keysDialog = document.getElementById('keysDialog');
   function openKeys(){ try { keysDialog.showModal(); } catch (e) { keysDialog.setAttribute('open', ''); } }
@@ -1571,7 +1800,7 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
   const welcomeSpeak = document.getElementById('welcomeSpeak');
   const welcomeStop = document.getElementById('welcomeStop');
   const welcomeStatus = document.getElementById('welcomeStatus');
-  const WELCOME = '손 안의 태양에 오신 것을 환영합니다. 태양을 향해 걷고, 숨으로 안개를 만들고, 누워서 천장 거울을 감상하는 작품입니다. ' +
+  const WELCOME = '손 안의 태양에 오신 것을 환영합니다. 태양을 향해 걷고, 안개를 피우고, 누워서 천장 거울을 감상하는 작품입니다. ' +
     '세 감상 방식은 모두 같은 작품을 보여 줍니다. 첫 번째, 화면 보며 감상은 화면에서 태양과 거울을 보고, 바닥을 누르거나 방향키로 직접 이동하는 방식입니다. 소리나 원하는 설명도 켜서 들을 수 있습니다. ' +
     '두 번째, 음성 안내로 감상은 작품의 목소리와 효과음으로 거리와 변화를 안내받는 방식입니다. 지점을 먼저 확인하고 이곳으로 이동을 눌러 걸으며, 방향키나 걷기 버튼으로도 움직일 수 있습니다. 별도의 화면 읽기 프로그램은 필요하지 않습니다. ' +
     '세 번째, 화면 읽기 사용은 버튼 이름과 글을 읽어 주는 프로그램으로 조작하는 방식입니다. VoiceOver, TalkBack, NVDA를 기기에서 먼저 켠 뒤 선택하세요. 사용 중인 프로그램이 버튼과 작품 안내를 읽고, 두 목소리가 겹치지 않게 작품의 내장 음성은 꺼집니다. 이 선택이 화면 읽기 프로그램 자체를 켜 주지는 않습니다. ' +
@@ -1666,7 +1895,7 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
   const FOCUS = [
     ['focusSun', () => `태양. 홀 끝 벽 높은 곳에 떠 있는 둥근 빛이 이 작품의 중심입니다. 오직 한 가지 주황빛만 내는 램프라서, 홀 안의 다른 색은 모두 사라지고 노랑과 검정만 남습니다. 지금 태양까지 약 ${describe().dist}미터입니다. 가까이 갈수록 배경음이 높아집니다. ${journey.sun ? '이미 태양 아래에서 그 정체를 확인했습니다.' : '태양 바로 아래까지 가면 무언가를 발견할 수 있습니다.'}`],
     ['focusMirror', null],
-    ['focusFog', () => `안개. 홀에는 옅은 인공 안개가 떠다닙니다. 안개는 빛을 사방으로 흩어 태양을 부드럽게 번지게 하고, 공간을 실제 날씨 속에 있는 것처럼 느끼게 합니다. 지금 안개는 ${fog > 0.7 ? '아주 짙습니다' : fog > 0.45 ? '짙습니다' : '옅습니다'}. 숨 불어넣기 단추나 스페이스 키로 안개를 짙게 만들 수 있고, 짙어지면 배경음이 먹먹해집니다.`],
+    ['focusFog', () => `안개. 홀에는 옅은 인공 안개가 떠다닙니다. 안개는 빛을 사방으로 흩어 태양을 부드럽게 번지게 하고, 공간을 실제 날씨 속에 있는 것처럼 느끼게 합니다. 지금 안개는 ${fog > 0.7 ? '아주 짙습니다' : fog > 0.45 ? '짙습니다' : '옅습니다'}. 안개 피우기 단추나 스페이스 키로 안개를 짙게 만들 수 있고, 짙어지면 배경음이 먹먹해집니다.`],
     ['focusPeople', () => '관람객. ' + nearbySummary() + ' 관람객들은 홀을 거닐거나 바닥에 누워 천장 거울 속 자신을 올려다봅니다.' + (!letterOn ? ' 4 관객의 상호작용을 열면 관람객들이 함께 누워 거울 속에 글자를 만듭니다.' : ' 홀 한가운데에는 열세 명이 누워 거울 속에 태양 글자를 만들고 있고, ' + (slotWasFilled ? '당신이 마지막 자리를 채웠습니다.' : '한 사람 자리가 비어 있습니다.'))],
     ['focusHall', () => `홀 공간. 터빈 홀은 길이 약 155미터, 폭 약 23미터, 높이 약 35미터의 거대한 직사각형 공간입니다. 입구에서 끝 벽까지 실제로 걸으면 2분쯤 걸립니다. 지금 나는 ${positionShort()}`]
   ];
@@ -1679,11 +1908,10 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
     else feedback(fn(), { auto: false });
   }
   FOCUS.forEach(([id], i) => document.getElementById(id).addEventListener('click', () => speakFocus(i)));
-  function setFocusOpen(v){ focusList.hidden = !v; focusBtn.setAttribute('aria-expanded', String(v)); }
-  focusBtn.addEventListener('click', () => {
-    const open = focusList.hidden;
-    setFocusOpen(open);
-    if (open) feedback('관심 있는 대상을 골라 자세히 살펴보세요. 태양, 천장 거울, 안개, 관람객, 홀 공간 중 하나를 누르면 설명을 들을 수 있습니다. 키보드에서는 숫자 2를 누를 때마다 다음 대상의 설명을 들을 수 있습니다.', { auto: false });
+  function setFocusOpen(v){}
+  focusBtn.addEventListener('click', e => {
+    openSheet('vFocus', { focus: e.detail === 0 });
+    feedback('관심 있는 대상을 골라 자세히 살펴보세요. 태양, 천장 거울, 안개, 관람객, 홀 공간 중 하나를 누르면 설명을 들을 수 있습니다. 키보드에서는 숫자 2를 누를 때마다 다음 대상의 설명을 들을 수 있습니다.', { auto: false });
   });
   function nextFocus(){ setFocusOpen(true); speakFocus((focusIdx + 1) % FOCUS.length); }
 
@@ -1821,7 +2049,7 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
     exploring = v;
     document.body.dataset.exploring = v ? '1' : '';
     exploreBtn3.setAttribute('aria-pressed', String(v));
-    explorePanel.hidden = !v;
+    exploreBtn3.textContent = `손끝 탐색 · ${v ? '켜짐' : '꺼짐'}`;
     curSpot = null; spotIdx = -1;
     setPreview(null);
     if (v) {
@@ -1831,10 +2059,15 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
     } else exploreEnd();
     if (silent) return;
     feedback(v
-      ? '손끝 탐색을 시작합니다. 터빈 홀 화면을 훑으면 위치에 따라 소리가 달라집니다. 탐색 지점에 닿으면 설명을 들을 수 있습니다. 지점 버튼이나 마침표 키로도 위치를 확인할 수 있습니다. ‘이곳으로 이동’을 누르면 고른 자리로 걷습니다. 숫자 3을 다시 누르면 자유롭게 걷기로 돌아갑니다.'
+      ? '손끝 탐색을 시작합니다. 터빈 홀 화면을 훑으면 위치에 따라 소리가 달라집니다. 탐색 지점에 닿으면 설명을 들을 수 있습니다. 다음 지점 단추나 마침표 키로도 위치를 확인할 수 있습니다. ‘이곳으로 이동’을 누르면 고른 자리로 걷습니다. 숫자 3을 다시 누르면 자유롭게 걷기로 돌아갑니다.'
       : '손끝 탐색을 끄고 걷기로 돌아왔습니다.', { auto: false, level: 'state' });
   }
   exploreBtn3.addEventListener('click', () => setExploring(!exploring));
+  document.getElementById('exploreOpen').addEventListener('click', e => {
+    openSheet('vExplore', { focus: e.detail === 0 });
+    if (!exploring) setExploring(true);
+    else feedback('손끝 탐색 중입니다. 화면을 훑거나 다음 지점을 눌러 위치를 확인하세요.', { auto: false });
+  });
   document.getElementById('nextSpotBtn').addEventListener('click', nextSpot);
   function drawExplore(){
     if (!exploring) return;
@@ -1862,7 +2095,7 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
     { name: '누워서 거울 보기', lie: true, text: () => '바닥에 누웠습니다. 천장 거울에는 홀 바닥과 관람객이 비칩니다. 거울 속 내 모습도 길게 펼쳐집니다. 높은 울림이 낮아지는 소리를 들어 보세요.' },
     { name: '안개와 빛 이해하기', text: () => FOCUS[2][1]() },
     { name: '관객과 글자 만들기', letter: true, x: SLOT.x, z: SLOT.z, text: () => '홀 한가운데로 왔습니다. 천장 거울을 올려다보면 바닥에 누운 관람객 열세 명의 몸이 태양이라는 글자를 이루고 있습니다. 그런데 받침 ㅇ의 오른쪽 반쪽이 비어 있고, 지금 당신은 바로 그 빈 자리에 서 있습니다. 안내가 끝나면 바닥에 누워 C자로 웅크리고, 둥근 등이 태양 쪽을 향하게 몸을 돌려 글자를 완성해 보세요.' },
-    { name: '직접 탐색하기', text: () => '이제 직접 살펴볼 차례입니다. 손끝 탐색을 켰습니다. 화면이나 지점 버튼으로 위치를 소리로 확인한 뒤 ‘이곳으로 이동’을 누르세요.' }
+    { name: '직접 탐색하기', text: () => '이제 직접 살펴볼 차례입니다. 손끝 탐색을 켰습니다. 화면이나 다음 지점 단추로 위치를 소리로 확인한 뒤 ‘이곳으로 이동’을 누르세요.' }
   ];
   function updateTourControls(){
     tourStart.hidden = !!tour;
@@ -1902,11 +2135,10 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
     const step = tourSteps[tour.index];
     if (tour.index === tourSteps.length - 1) {
       setExploring(true, true);
-      if (mode === 'visual') openPanel('pGuide');
+      openSheet('vExplore');
     } else setExploring(false, true);
     me.lying = !!step.lie;
-    lieBtn.setAttribute('aria-pressed', String(me.lying));
-    lieBtn.textContent = me.lying ? '일어서기' : '바닥에 눕기';
+    syncLieBtn();
     syncPoseUI();
     if (step.lie) { sfx.lie(true); markJourney('lie'); }
     if (step.letter) setInteractOpen(true);
@@ -1946,6 +2178,7 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
     }
     updateTourControls();
   }
+  document.getElementById('tourOpen').addEventListener('click', () => { if (!tour) setTimeout(() => tourStart.click(), 0); });
   tourStart.addEventListener('click', () => {
     stopSpeech();
     haltMoveSilently();
@@ -2002,7 +2235,7 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
   let lpTimer = null, lpFired = false, lpX = 0, lpY = 0;
   document.addEventListener('pointerdown', e => {
     if (e.pointerType !== 'touch') return;
-    const b = e.target.closest('button'); if (!b || b.id === 'breath') return;
+    const b = e.target.closest('button'); if (!b) return;
     lpFired = false; lpX = e.clientX; lpY = e.clientY; clearTimeout(lpTimer);
     lpTimer = setTimeout(() => {
       lpFired = true; buzz([15]);
@@ -2193,7 +2426,12 @@ dialog.mode .choices small{display:block;font-size:13px;font-weight:400;opacity:
     while (expired < me.trail.length && now - me.trail[expired].t >= 30000) expired++;
     if (expired) me.trail.splice(0, expired);
 
-    fog = breathing ? Math.min(1, fog + dt*0.45) : Math.max(0.22, fog - dt*0.04);
+    fog = breathing ? Math.min(1, fog + dt*(micBlowing ? 0.45 : 0.2)) : Math.max(0.22, fog - dt*0.04);
+    updateMic(now);
+    if (fogMachine && fog >= 0.98 && !fogMaxAnnounced) {
+      fogMaxAnnounced = true;
+      feedback('안개가 가장 짙어졌습니다. 태양의 윤곽이 거의 사라졌습니다. 다시 누르면 안개가 걷힙니다.', { level: 'major', interrupt: false });
+    }
 
     // 숨결: 내 자리에서 안개 덩어리가 피어올라 퍼진다.
     if (breathing && !reduceMotion) {
